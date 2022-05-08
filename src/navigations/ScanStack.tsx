@@ -13,7 +13,7 @@ const ScanStack = memo(() => {
         name={Routes.Scan}
         component={Scan}
         options={{ headerShown: false }}
-      ></Stack.Screen>
+      />
     </Stack.Navigator>
   );
 });

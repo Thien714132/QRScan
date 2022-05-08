@@ -6,5 +6,10 @@
     "assetBundlePatterns": [
       "**/*"
     ]
+  },
+  "ios": {
+    "entitlements": {
+      "com.apple.developer.networking.wifi-info": true
+    }
   }
 }

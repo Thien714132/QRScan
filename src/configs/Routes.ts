@@ -6,7 +6,14 @@ const Routes = {
     AccountStack: "AccountStack",
     Account: "Account",
     ScanStack: "ScanStack",
-    Scan:"Scan"
+    Scan:"Scan",
+
+    // dashboardStack
+    CALENDAR: "Calendar",
+    CLASS: "Class",
+    CLASS_DETAIL: 'Class_detail',
+    LESSON: "Lesson",
+    HISTORY: "History"
 };
 
 export default Routes;

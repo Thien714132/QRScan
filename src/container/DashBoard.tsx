@@ -13,74 +13,169 @@ import {
   Platform,
   TouchableWithoutFeedback,
   Keyboard,
-  ScrollView
+  ScrollView,
+  SafeAreaView,
 } from "react-native";
+import Button from "../components/Button";
+import { capital, main_color1, main_color2, regular } from "../configs/Colors";
 import Routes from "../configs/Routes";
 import scale from "../configs/scale";
 import { TEXT } from "../configs/TEXT";
+import SvgQRCode from "react-native-qrcode-svg";
+import { useSelector } from "react-redux";
+import moment from "moment";
 
 const DashBoard = () => {
+  const { navigate } = useNavigation();
+  const { user } = useSelector((state: any) => state.userState);
+  let userName: String;
+  user ? (userName = `, ${user?.name}`) : "There";
+  const { history } = useSelector((state: any) => state.historyState);
+  const [historyLength, setHistoryLength] = useState<any>(0);
+  const [turn_on_red_dot, set_turn_on_red_dot] = useState<any>(false);
 
-  const {navigate} = useNavigation();
+  const getChange = async () => {
+    if (history) {
+      if (historyLength < history?.history.length) {
+        set_turn_on_red_dot(true);
+        setHistoryLength(history?.history.length);
+      } else set_turn_on_red_dot(false);
+      // console.log(history.history.length);
+    }
+  };
+
+  useEffect(() => {
+    getChange();
+  }, [history]);
 
   return (
-    <View style={styles.container}>
-      <View style={styles.v_header}>
-            <Image source={require('../images/background.png')} style={styles.pic_backgroud}/>
-            <View style={styles.v_name}> 
-              <Text style={{fontSize: scale(13), color: '#fff'}}>{TEXT.DASHBOARD.TODAY}</Text>
-              <Text style={{fontSize: scale(27), color: '#fff', fontWeight: 'bold'}}>{TEXT.DASHBOARD.Hi}</Text>
+    <SafeAreaView style={styles.container}>
+      <ScrollView>
+        <LinearGradient
+          colors={[main_color1, main_color2]}
+          start={[1, 1]}
+          end={[1, 0]}
+        >
+          <View style={styles.v_header}>
+            <View style={styles.v_name}>
+              <Text style={{ fontSize: 13, color: capital }}>
+                {moment(moment()).format("ddd, MMMM DD")}
+              </Text>
+              <Text
+                style={{
+                  fontSize: 27,
+                  color: capital,
+                  fontWeight: "bold",
+                  textTransform: "capitalize",
+                }}
+              >
+                {TEXT.DASHBOARD.Hi} {userName}
+              </Text>
             </View>
             <TouchableOpacity style={styles.v_bellIcon}>
-              <Image style={styles.ic_bell} source={require('../images/ic_bell.png')}/>
+              <Image
+                style={styles.ic_bell}
+                source={require("../images/ic_bell.png")}
+              />
             </TouchableOpacity>
-      </View>
-      <ScrollView style={styles.v_scrollView}>
-
-        <LinearGradient colors={['#EFC93B', '#F37335']} start={[0, 1]} end ={[1,0]} style={[styles.v_qrCode, {...styles.shadow, shadowColor: "#EFC93B"}]}>
-          <View style={styles.v_qrCodeContainer}>
-            <Image style={styles.ic_qrCode} source={require('../images/qrCode.png')} />
           </View>
+
+          <LinearGradient
+            colors={["#CFDCFF", "#FDA349"]}
+            start={[0, 1]}
+            end={[1, 0]}
+            style={[
+              styles.v_qrCode,
+              { ...styles.shadow, shadowColor: "#EFC93B" },
+            ]}
+          >
+            <View style={styles.v_qrCodeContainer}>
+              {/* <Image
+                style={styles.ic_qrCode}
+                source={require("../images/qrCode.png")}
+              /> */}
+
+              <SvgQRCode
+                size={160}
+                value={JSON.stringify({
+                  name: user?.name,
+                  MSV: user?.student_id,
+                })}
+              />
+            </View>
+          </LinearGradient>
         </LinearGradient>
 
-        <View style={styles.v_dashBoard}>
-          <Text style={{fontWeight: '500', fontSize: scale(22), color: '#2C2C33',marginBottom: scale(20) }}>- Dashboard -</Text>
-          <View style={styles.v_dashRow}>
-            <TouchableOpacity style={[styles.bt_dash, {...styles.shadowButton}]}>
-              <Image style={styles.ic_dashButton} source={require('../images/ic_calendar.png')}/>
-              <Text style={styles.txt_dashButton}>{TEXT.DASHBOARD.CALENDAR}</Text>
-            </TouchableOpacity>
+        <View style={styles.v_scrollView}>
+          <View style={styles.v_dashBoard}>
+            <Text style={styles.v_dashBoard_label}>
+              - {TEXT.DASHBOARD.DASH_BOARD_LABEL} -
+            </Text>
+            <View style={styles.v_dashRow}>
+              <Button
+                buttonName={TEXT.DASHBOARD.CALENDAR}
+                onPress={() => navigate(Routes.CALENDAR)}
+                iconName={require("../images/ic_calendar.png")}
+                iconColor="#F79A2D"
+                iconBackground="#FEF7ED"
+                detailButton="Coures schedule"
+              />
 
-            <TouchableOpacity style={[styles.bt_dash, {...styles.shadowButton, marginHorizontal: scale(20)}]}>
-              <Image style={styles.ic_dashButton} source={require('../images/ic_class.png')}/>
-              <Text style={styles.txt_dashButton}>{TEXT.DASHBOARD.CLASS}</Text>
-            </TouchableOpacity>
+              <Button
+                buttonName={TEXT.DASHBOARD.CLASS}
+                onPress={() => navigate(Routes.CLASS)}
+                iconName={require("../images/ic_class.png")}
+                iconColor="#29d229"
+                iconBackground="#e9ffe9"
+                detailButton="All classes"
+                marginLeft={scale(20)}
+              />
+            </View>
 
-            <TouchableOpacity style={[styles.bt_dash, {...styles.shadowButton}]}>
-              <Image style={styles.ic_dashButton} source={require('../images/ic_history.png')}/>
-              <Text style={styles.txt_dashButton}>{TEXT.DASHBOARD.HISTORY}</Text>
-            </TouchableOpacity>
-          </View>
+            <View style={styles.v_dashRow}>
+              <Button
+                buttonName={TEXT.DASHBOARD.HISTORY}
+                onPress={() => {
+                  navigate(Routes.HISTORY), set_turn_on_red_dot(false);
+                }}
+                iconName={require("../images/ic_history.png")}
+                iconColor="#14ABD6"
+                iconBackground="#EAF7FB"
+                detailButton="Attendance history"
+                redDot={turn_on_red_dot}
+              />
 
-          <View style={styles.v_dashRow}>
-            <TouchableOpacity style={[styles.bt_dash, {...styles.shadowButton}]}>
-              <Image style={styles.ic_dashButton} source={require('../images/ic_support.png')}/>
-              <Text style={styles.txt_dashButton}>{TEXT.DASHBOARD.SUPPORT}</Text>
-            </TouchableOpacity>
+              <Button
+                buttonName={TEXT.DASHBOARD.SUPPORT}
+                // onPress={() => navigate(Routes.CALENDAR)}
+                iconName={require("../images/ic_support.png")}
+                iconColor="#d84a4a"
+                iconBackground="#fee8e8"
+                marginLeft={scale(20)}
+                detailButton="Support contacts"
+              />
 
-            <TouchableOpacity style={[styles.bt_dash, {...styles.shadowButton, marginHorizontal: scale(20)}]}>
-              <Image style={styles.ic_dashButton} source={require('../images/ic_setting.png')}/>
-              <Text style={styles.txt_dashButton}>{TEXT.DASHBOARD.SETTING}</Text>
-            </TouchableOpacity>
+              {/* <Button
+                buttonName={TEXT.DASHBOARD.SETTING}
+                // onPress={() => navigate(Routes.CALENDAR)}
+                iconName={require("../images/ic_setting.png")}
+                iconColor="#5A6175"
+                iconBackground="#F2F3F4"
+                marginHorizontal={scale(20)}
+              /> */}
 
-            <TouchableOpacity style={[styles.bt_dash, {...styles.shadowButton}]} onPress={()=> navigate(Routes.Login)}>
-              <Image style={styles.ic_dashButton} source={require('../images/ic_logout.png')}/>
-              <Text style={styles.txt_dashButton}>{TEXT.DASHBOARD.LOGOUT}</Text>
-            </TouchableOpacity>
+              {/* <Button
+                buttonName={TEXT.DASHBOARD.LOGOUT}
+                onPress={() => navigate(Routes.Login)}
+                iconName={require("../images/ic_logout.png")}
+                iconColor="#d84a4a"
+                iconBackground="#fee8e8"
+              /> */}
+            </View>
           </View>
         </View>
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 };
 
@@ -89,128 +184,125 @@ export default DashBoard;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#fff",
+    backgroundColor: main_color2,
   },
 
-  v_scrollView:{
+  v_scrollView: {
     // paddingBottom: '15%'
   },
 
-  v_header:{
-    width: '100%',
-    flexDirection: 'row',
-    alignItems: 'center',
-    // borderBottomLeftRadius: scale(20),
-    // borderBottomRightRadius: scale(20),
-    // marginTop: scale(10)
+  v_header: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginLeft: 16,
+    marginVertical: 10,
+    marginBottom: 20,
   },
 
-  pic_backgroud:{
+  pic_backgroud: {
     height: scale(100),
-    width: '100%',
-    resizeMode: 'cover',
+    width: "100%",
+    resizeMode: "cover",
     borderBottomLeftRadius: scale(30),
-    borderBottomRightRadius: scale(30)
+    borderBottomRightRadius: scale(30),
   },
 
-  v_name:{
-    // marginLeft: scale(30), 
-    position: 'absolute',
-    left: scale(20),
-    bottom: scale(20)
+  v_name: {},
+
+  v_bellIcon: {
+    position: "absolute",
+    right: 16,
+    padding: 10,
+    backgroundColor: main_color1,
+    borderRadius: 20,
   },
 
-  v_bellIcon:{
-    position: 'absolute',
-    bottom: scale(20),
-    right: scale(30),
-    paddingVertical: scale(10),
-    paddingHorizontal: scale(10),
-    backgroundColor: '#f4f6f8',
-    borderRadius: scale(20)
+  ic_bell: {
+    height: scale(20),
+    width: scale(20),
+    tintColor: "#2C2C33",
   },
 
-  ic_bell:{
-    height: scale(30),
-    width: scale(30),
-    tintColor: '#2C2C33'
+  v_qrCode: {
+    alignSelf: "center",
+    // paddingHorizontal: scale(20),
+    // paddingVertical: scale(20),
+    padding: 10,
+    borderRadius: 30,
+    marginBottom: 30,
   },
 
-  v_qrCode:{
-    alignSelf: 'center',
-    paddingHorizontal: scale(20),
-    paddingVertical: scale(20),
-    // backgroundColor: '#EFC93B',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 40,
-    marginTop: scale(20),
-    marginBottom: 20
+  v_qrCodeContainer: {
+    alignSelf: "baseline",
+    // paddingHorizontal: scale(20),
+    // paddingVertical: scale(20),
+    padding: 20,
+    backgroundColor: "#fff",
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 20,
   },
 
-  v_qrCodeContainer:{
-    alignSelf: 'baseline',
-    paddingHorizontal: scale(20),
-    paddingVertical: scale(20),
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 30
+  ic_qrCode: {
+    height: scale(160),
+    width: scale(160),
   },
 
-  ic_qrCode:{
-    height: scale(220),
-    width: scale(220),
+  v_dashBoard: {
+    alignItems: "center",
+    backgroundColor: main_color1,
   },
 
-  v_dashBoard:{
-    alignItems: 'center',
-    marginBottom: '15%'
+  v_dashBoard_label: {
+    fontWeight: "bold",
+    fontSize: scale(20),
+    color: "#1C226B",
+    marginBottom: scale(20),
   },
 
-  v_dashRow:{
-    flexDirection: 'row',
-    marginHorizontal: scale(30),
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: scale(20)
+  v_dashRow: {
+    flexDirection: "row",
+    marginHorizontal: scale(20),
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: scale(20),
   },
 
-  bt_dash:{
-    height: scale(90),
-    width: scale(90),
-    backgroundColor: '#fff',
+  bt_dash: {
+    height: scale(80),
+    width: scale(80),
+    backgroundColor: "#fff",
     borderRadius: scale(20),
-    alignItems: 'center',
-    justifyContent: 'center'
+    alignItems: "center",
+    justifyContent: "center",
   },
 
-  ic_dashButton:{
-    height: scale(30),
-    width: scale(30),
-    tintColor: '#2C2C33',
-    resizeMode: 'contain'
+  ic_dashButton: {
+    height: scale(25),
+    width: scale(25),
+    tintColor: "#2C2C33",
+    resizeMode: "contain",
   },
 
-  txt_dashButton:{
-    fontSize: scale(15),
-    color: '#2C2C33',
+  txt_dashButton: {
+    fontSize: scale(12),
+    color: "#2C2C33",
     marginTop: scale(5),
-    fontWeight: '500'
+    fontWeight: "500",
   },
 
-  shadow:{
+  shadow: {
     shadowColor: "#000",
     shadowOffset: {
       width: 0,
-      height: 5,
+      height: 1,
     },
-    shadowOpacity: 0.2,
-    shadowRadius: 30,
-    elevation: 5,
+    shadowOpacity: 0.1,
+    shadowRadius: 1,
+    elevation: 1,
   },
 
-  shadowButton:{
+  shadowButton: {
     shadowColor: "#000",
     shadowOffset: {
       width: 0,
@@ -219,6 +311,5 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 15,
     elevation: 5,
-  }
-  
+  },
 });

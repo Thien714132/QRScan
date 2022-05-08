@@ -8,22 +8,26 @@ import { View, StyleSheet, Image, TouchableOpacity } from "react-native";
 import Scan from "../container/Scan";
 import ScanStack from "./ScanStack";
 import { LinearGradient } from "expo-linear-gradient";
+import React from "react";
+import { icon_color, icon_color_2 } from "../configs/Colors";
 
 const Tab = createBottomTabNavigator();
 
 const CustomQrScanButton = ({ children, onPress }) => (
   <TouchableOpacity
-    style={{ top: 0, justifyContent: "center", alignItems: "center", 
-    //...styles.shadow 
-  }}
+    style={{
+      justifyContent: "center",
+      alignItems: "center",
+      //...styles.shadow
+    }}
     onPress={onPress}
   >
     <LinearGradient
-      colors={['#686A75', '#333542']}
+      colors={[icon_color, icon_color]}
       style={{
-        width: scale(50),
-        height: scale(50),
-        borderRadius: scale(10),
+        width: scale(60),
+        height: scale(60),
+        borderRadius: scale(30),
         backgroundColor: "#000",
       }}
     >
@@ -37,7 +41,8 @@ const MainTab = () => {
     <Tab.Navigator
       screenOptions={{
         tabBarShowLabel: false,
-        tabBarStyle: [styles.tabBarStyle, 
+        tabBarStyle: [
+          styles.tabBarStyle,
           // {...styles.shadow}
         ],
       }}
@@ -48,14 +53,22 @@ const MainTab = () => {
         options={{
           headerShown: false,
           tabBarIcon: ({ focused }) => (
-            <View style={{ alignItems: "center", justifyContent: "center" }}>
+            <View
+              style={{
+                width: "50%",
+                height: scale(70),
+                justifyContent: "center",
+                alignItems: "center",
+              }}
+            >
               <Image
                 source={require("../images/ic_home.png")}
                 resizeMode="contain"
                 style={{
-                  height: scale(30), 
-                  width: scale(30),
-                  tintColor: focused ? "#EFC93B" : "#A5AFBF",resizeMode: 'contain'
+                  height: scale(28),
+                  width: scale(28),
+                  tintColor: focused ? icon_color : icon_color_2,
+                  resizeMode: "contain",
                 }}
               />
             </View>
@@ -68,16 +81,21 @@ const MainTab = () => {
         options={{
           headerShown: false,
           tabBarIcon: ({ focused }) => (
-            <Image
-              source={require("../images/ic_qr.png")}
-              resizeMode="contain"
-              style={{ height: scale(30), width: scale(30), resizeMode: 'contain',
-                // tintColor: "#fff"
-                tintColor: focused ? "#EFC93B" : "#fff",
-               }}
-            />
+            <View>
+              <Image
+                source={require("../images/ic_qr.png")}
+                resizeMode="contain"
+                style={{
+                  height: scale(40),
+                  width: scale(40),
+                  resizeMode: "contain",
+                  // tintColor: "#fff",
+                  tintColor: focused ? icon_color : icon_color_2,
+                }}
+              />
+            </View>
           ),
-          tabBarButton: (props) => <CustomQrScanButton {...props} />,
+          // tabBarButton: (props) => <CustomQrScanButton {...props} />,
         }}
       ></Tab.Screen>
       <Tab.Screen
@@ -86,14 +104,22 @@ const MainTab = () => {
         options={{
           headerShown: false,
           tabBarIcon: ({ focused }) => (
-            <View>
+            <View
+              style={{
+                width: "50%",
+                height: scale(70),
+                justifyContent: "center",
+                alignItems: "center",
+              }}
+            >
               <Image
                 source={require("../images/ic_user.png")}
                 resizeMode="contain"
                 style={{
-                  height: scale(30),
-                  width: scale(30),
-                  tintColor: focused ? "#EFC93B" : "#A5AFBF",resizeMode: 'contain'
+                  height: scale(28),
+                  width: scale(28),
+                  tintColor: focused ? icon_color : icon_color_2,
+                  resizeMode: "contain",
                 }}
               />
             </View>
@@ -108,19 +134,13 @@ export default MainTab;
 
 const styles = StyleSheet.create({
   tabBarStyle: {
-    position: "absolute",
-    bottom: '2%',
-    height: '8%',
-    backgroundColor: "#f4f6f8",
-    marginHorizontal: scale(30),
-    // borderTopRightRadius: scale(20),
-    // borderTopLeftRadius: scale(20),
-    borderRadius: scale(20),
+    width: "100%",
+    height: scale(60),
+    backgroundColor: "#FFFFFF",
     borderTopWidth: 0,
-    elevation: 0
   },
 
-  shadow:{
+  shadow: {
     shadowColor: "#000",
     shadowOffset: {
       width: 0,
@@ -129,5 +149,5 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 10,
     // elevation: 3,
-  }
+  },
 });

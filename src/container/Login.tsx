@@ -12,25 +12,136 @@ import {
   Platform,
   TouchableWithoutFeedback,
   Keyboard,
+  Button,
+  Modal,
+  Dimensions,
 } from "react-native";
+import Loading from "../components/Loading";
+import { API } from "../configs/Constants";
+import validationEmail from "../configs/emailValidate";
 import Routes from "../configs/Routes";
 import scale from "../configs/scale";
 import { TEXT } from "../configs/TEXT";
+import { setToken } from "../redux/actions/tokenAction";
+import { getUser, login } from "../services/auth";
+import jwt_decode from "jwt-decode";
+import { setUser } from "../redux/actions/userAction";
+import {
+  getAllClasses,
+  getHistoryByStudent,
+  getStudentClass,
+  getTeacherClass,
+} from "../services/class_services";
+import { setCourse } from "../redux/actions/coursesAction";
+import { useSelector } from "react-redux";
+import { BarCodeScanner } from "expo-barcode-scanner";
+import { setHistory } from "../redux/actions/historyAction";
 
 interface LoginProps {}
 
 const Login = memo((props: LoginProps) => {
-  const {navigate} = useNavigation();
-
+  const { navigate } = useNavigation();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [visiblePassword, setVisiblePassword] = useState(true);
+  const [validateLogin, setValidateLogin] = useState({
+    status: false,
+    mes: "",
+  });
+  const [turnOnLoading, setTurnOnLoading] = useState(false);
 
+  // const a = async () => {
+  //   const b = await login({ email, password });
+  //   console.log(b);
+  // };
 
+  // console.log(validationEmail("asdasd@asdasd.comn"));
+
+  const onLogin = async () => {
+    // const validateEmail = validationEmail(email);
+    // if (!validateEmail) {
+    //   setValidateLogin({
+    //     ...validateLogin,
+    //     status: true,
+    //     mes: "Email invalid",
+    //   });
+    //   return;
+    // }
+
+    setValidateLogin({ status: false, mes: "" });
+
+    if (
+      email.trim() === null ||
+      email.trim() === "" ||
+      !validationEmail(email)
+    ) {
+      setValidateLogin({
+        ...validateLogin,
+        status: true,
+        mes: "Email invalid",
+      });
+      return;
+    }
+    if (password.trim() === null || password.trim() === "") {
+      setValidateLogin({
+        ...validateLogin,
+        status: true,
+        mes: "Password invalid",
+      });
+      return;
+    }
+
+    if (!validateLogin.status) {
+      setTurnOnLoading(true);
+      const data: any = await login({
+        password,
+        email,
+      });
+      // console.log(data);
+      if (data?.access_token) {
+        if (data.access_token !== "ERROR") {
+          var decoded = jwt_decode(data.access_token);
+          setToken(data.access_token);
+          const userData: any = await getUser(data.access_token, decoded._id);
+          var coursesData = {};
+          var historyData = {};
+          if (userData?.role === "Student") {
+            coursesData = await getStudentClass(userData._id);
+            historyData = await getHistoryByStudent(null, userData._id);
+          } else if (userData?.role === "Teacher") {
+            coursesData = await getTeacherClass(userData._id);
+          }
+          // console.log(coursesData);
+          if (!userData.message && !coursesData.message) {
+            setUser(userData);
+            setCourse(coursesData);
+            setHistory(historyData);
+          }
+          setTurnOnLoading(false);
+          setValidateLogin({
+            ...validateLogin,
+            status: true,
+            mes: "Login failed. Try again",
+          });
+        } else {
+        }
+      } else {
+        setTurnOnLoading(false);
+        setValidateLogin({
+          ...validateLogin,
+          status: true,
+          mes: data.message,
+        });
+      }
+    }
+  };
 
   return (
     <KeyboardAvoidingView
       style={styles.container}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
+      {turnOnLoading ? <Loading></Loading> : null}
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
         <View style={styles.inner}>
           <Image
@@ -53,6 +164,8 @@ const Login = memo((props: LoginProps) => {
                 style={styles.txtIp_inputContent}
                 placeholderTextColor="#707070"
                 placeholder={TEXT.LOGIN.Email}
+                value={email}
+                onChangeText={setEmail}
               ></TextInput>
             </View>
 
@@ -66,6 +179,8 @@ const Login = memo((props: LoginProps) => {
                 secureTextEntry={visiblePassword}
                 placeholderTextColor="#707070"
                 placeholder={TEXT.LOGIN.PASSWORD}
+                value={password}
+                onChangeText={setPassword}
               ></TextInput>
               <TouchableOpacity
                 onPress={() => {
@@ -78,7 +193,8 @@ const Login = memo((props: LoginProps) => {
                 />
               </TouchableOpacity>
             </View>
-            <TouchableOpacity onPress={()=> navigate(Routes.Maintab)}
+            <TouchableOpacity
+              onPress={onLogin}
               style={[
                 styles.v_inputContainer,
                 {
@@ -91,7 +207,9 @@ const Login = memo((props: LoginProps) => {
               <Text style={styles.txt_buttonText}>{TEXT.LOGIN.BT_LOGIN}</Text>
             </TouchableOpacity>
 
-            <Text style={styles.txt_forgetPassButton}>{TEXT.LOGIN.FORGET_PASS}</Text>
+            <Text style={styles.txt_forgetPassButton}>
+              {TEXT.LOGIN.FORGET_PASS}
+            </Text>
 
             <TouchableOpacity
               style={[
@@ -103,7 +221,9 @@ const Login = memo((props: LoginProps) => {
                 },
               ]}
             >
-              <Text style={styles.txt_buttonText}>{TEXT.LOGIN.BT_REGISTER}</Text>
+              <Text style={styles.txt_buttonText}>
+                {TEXT.LOGIN.BT_REGISTER}
+              </Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -124,7 +244,7 @@ const styles = StyleSheet.create({
   },
 
   imgBackgroundContainer: {
-    height: '54%',
+    height: "54%",
     width: "100%",
     alignItems: "center",
     justifyContent: "center",
@@ -216,12 +336,49 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontWeight: "bold",
   },
-  txt_forgetPassButton:{
+  txt_forgetPassButton: {
     fontSize: scale(17),
-    color: '#333542',
+    color: "#333542",
     fontStyle: "italic",
-    fontWeight: 'bold',
-    textAlign: 'center',
-    marginBottom: scale(20)
-  }
+    fontWeight: "bold",
+    textAlign: "center",
+    marginBottom: scale(20),
+  },
+
+  v_modalError: {
+    flex: 1,
+    backgroundColor: "#000A",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+
+  v_modelErrorField: {
+    width: "70%",
+    borderRadius: 10,
+    backgroundColor: "#fff",
+    // justifyContent: 'center',
+  },
+
+  ic_warning: {
+    height: scale(30),
+    width: scale(30),
+    marginVertical: scale(20),
+    alignSelf: "center",
+  },
+
+  txt_errorMes: {
+    fontSize: scale(20),
+    fontWeight: "bold",
+    color: "#000",
+    textAlign: "center",
+  },
+
+  txt_hideModel: {
+    fontSize: scale(16),
+    color: "#4080EF",
+    fontWeight: "bold",
+    marginVertical: scale(20),
+    marginRight: scale(30),
+    alignSelf: "flex-end",
+  },
 });
