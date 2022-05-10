@@ -29,6 +29,7 @@ import { setUser } from "../redux/actions/userAction";
 import {
   getAllClasses,
   getHistoryByStudent,
+  getHistoryByTeacher,
   getStudentClass,
   getTeacherClass,
 } from "../services/class_services";
@@ -82,7 +83,11 @@ const Login = memo((props: LoginProps) => {
       });
       return;
     }
-    if (password.trim() === null || password.trim() === "") {
+    if (
+      password.trim() === null ||
+      password.trim() === "" ||
+      password.length < 6
+    ) {
       setValidateLogin({
         ...validateLogin,
         status: true,
@@ -97,7 +102,7 @@ const Login = memo((props: LoginProps) => {
         password,
         email,
       });
-      // console.log(data);
+      console.log(data);
       if (data?.access_token) {
         if (data.access_token !== "ERROR") {
           var decoded = jwt_decode(data.access_token);
@@ -110,6 +115,7 @@ const Login = memo((props: LoginProps) => {
             historyData = await getHistoryByStudent(null, userData._id);
           } else if (userData?.role === "Teacher") {
             coursesData = await getTeacherClass(userData._id);
+            historyData = await getHistoryByTeacher(null, userData._id);
           }
           // console.log(coursesData);
           if (!userData.message && !coursesData.message) {
@@ -124,8 +130,9 @@ const Login = memo((props: LoginProps) => {
             mes: "Login failed. Try again",
           });
         } else {
+          setTurnOnLoading(false);
         }
-      } else {
+      } else if (data?.message) {
         setTurnOnLoading(false);
         setValidateLogin({
           ...validateLogin,
@@ -226,6 +233,29 @@ const Login = memo((props: LoginProps) => {
               </Text>
             </TouchableOpacity>
           </View>
+          <Modal
+            animationType="slide"
+            transparent={true}
+            visible={validateLogin.status}
+            onRequestClose={() => {
+              setValidateLogin({ status: false, mes: "" });
+            }}
+          >
+            <View style={styles.v_modalError}>
+              <View style={styles.v_modelErrorField}>
+                <Image
+                  source={require("../images/ic_warning.png")}
+                  style={styles.ic_warning}
+                />
+                <Text style={styles.txt_errorMes}>{validateLogin.mes}</Text>
+                <TouchableOpacity
+                  onPress={() => setValidateLogin({ status: false, mes: "" })}
+                >
+                  <Text style={styles.txt_hideModel}>Ok</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </Modal>
         </View>
       </TouchableWithoutFeedback>
     </KeyboardAvoidingView>

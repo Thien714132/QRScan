@@ -94,12 +94,14 @@ const DashBoard = () => {
                 style={styles.ic_qrCode}
                 source={require("../images/qrCode.png")}
               /> */}
-
               <SvgQRCode
                 size={160}
                 value={JSON.stringify({
+                  role: user?.role,
                   name: user?.name,
-                  MSV: user?.student_id,
+                  DOB: user?.date_of_birth,
+                  phone: user?.phone,
+                  MSV: user?.role === "Student" ? user?.student_code : " ",
                 })}
               />
             </View>

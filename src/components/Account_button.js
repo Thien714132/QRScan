@@ -13,6 +13,7 @@ export default function Account_button(props) {
     iconBackground,
     switches = false,
     onPress,
+    right_arrow = true
   } = props;
   return (
     <TouchableOpacity style={styles.container} onPress={onPress}>
@@ -44,10 +45,13 @@ export default function Account_button(props) {
             )}
           </TouchableOpacity>
         ) : (
-          <Image
+          <>
+          {right_arrow ? <Image
             style={styles.img_right_arrow}
             source={require("../images/ic_right_arrow.png")}
-          />
+          />: null}
+          </>
+          
         )}
       </View>
     </TouchableOpacity>

@@ -15,6 +15,7 @@ import {
   Button,
   Dimensions,
   ScrollView,
+  RefreshControl,
 } from "react-native";
 import { BarCodeScanner } from "expo-barcode-scanner";
 import scale from "../configs/scale";
@@ -23,28 +24,60 @@ import { useSelector } from "react-redux";
 import {
   getClassDetail,
   getHistoryByStudent,
+  getHistoryByTeacher,
 } from "../services/class_services";
 import moment from "moment";
-import { icon_color } from "../configs/Colors";
+import { capital, icon_color, main_color1 } from "../configs/Colors";
 import { TEXT } from "../configs/TEXT";
+import { setHistory } from "../redux/actions/historyAction";
 
 const History = () => {
   const { user } = useSelector((state: any) => state.userState);
   const [history_data, set_history_data] = useState<any>();
   const { history } = useSelector((state: any) => state.historyState);
   const { goBack, navigate } = useNavigation();
+  const [refreshing, setRefreshing] = React.useState(false);
 
-  //   const getHistory = async () => {
-  //     const historyData = await getHistoryByStudent(null, user._id);
-  //     if (historyData.history) {
-  //       //   console.log(historyData);
-  //       set_history_data(historyData);
-  //     }
-  //   };
+  const onRefresh = React.useCallback(async () => {
+    if (user.role === "Teacher") {
+      setRefreshing(true);
+      const historyData = await getHistoryByTeacher(null, user._id);
+      if (history?.history !== []) {
+        setHistory(historyData);
+        setRefreshing(false);
+      } else if (user.role === "Student") setRefreshing(false);
+    }
+  }, []);
 
-  //   useEffect(() => {
-  //     getHistory();
-  //   }, []);
+  const formatistory = () => {
+    var finalHistory = {
+      newHistory: [],
+      oldHistory: [],
+    };
+    if (user.role === "Teacher") {
+      history?.history.map((item) => {
+        for (var i = 0; i < item.length; i++) {
+          if (
+            new Date().getTime() - new Date(item[i].check_in_at).getTime() <
+            7200000
+          ) {
+            finalHistory.newHistory.push(item[i]);
+          } else finalHistory.oldHistory.push(item[i]);
+        }
+      });
+    }
+    set_history_data(finalHistory);
+    // console.log(finalHistory);
+  };
+
+  useEffect(() => {
+    formatistory();
+  }, [refreshing]);
+
+  // console.log(
+  //   new Date("2022-05-07T07:07:00.000Z").getTime() -
+  //     new Date("2022-05-07T09:07:00.000Z").getTime()
+  // );
 
   return (
     <View style={styles.container}>
@@ -57,54 +90,104 @@ const History = () => {
           <Text style={styles.txt_header}>{TEXT.CLASS_DETAIL.HISTORY}</Text>
         </TouchableOpacity>
       </View>
-      <ScrollView>
-        {history?.history
-          ? history?.history.map((item) => (
-              <View
-                key={item._id}
-                style={{
-                  backgroundColor: "#fff",
-                  marginHorizontal: 15,
-                  padding: 10,
-                  marginTop: 10,
-                  borderRadius: 20,
-                  flexDirection: "row",
-                  alignItems: "center",
-                }}
-              >
-                <View
-                  style={{
-                    flex: 0.2,
-                    alignItems: "center",
-                  }}
-                >
-                  <View
-                    style={{
-                      height: 50,
-                      width: 50,
-                      backgroundColor: "#FFEEEC",
-                      borderRadius: 30,
-                      alignItems: "center",
-                      justifyContent: "center",
-                    }}
-                  >
-                    <Image
-                      style={{ height: 30, width: 30 }}
-                      source={require("../images/ic_accept.png")}
-                    />
-                  </View>
+      <ScrollView
+        style={{ marginBottom: 10, paddingBottom: 20 }}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
+      >
+        {history?.history && user.role === "Student" ? (
+          history?.history.map((item, index) => (
+            <View key={index} style={styles.v_history_item}>
+              <View style={styles.v_icon_history}>
+                <View style={styles.ic_history}>
+                  <Image
+                    style={{ height: 30, width: 30 }}
+                    source={require("../images/ic_accept.png")}
+                  />
                 </View>
-                <Text style={{ fontSize: 16, flex: 0.8 }}>
-                  You checked in{" "}
-                  <Text style={{ fontWeight: "bold" }}>
-                    {item.course_name} - {item.lesson_name}
-                  </Text>{" "}
-                  at{" "}
-                  {moment(item.check_in_at).format("MMMM Do YYYY, h:mm:ss a")}
-                </Text>
               </View>
-            ))
-          : null}
+              <Text style={{ fontSize: 16, flex: 0.8 }}>
+                You checked in{" "}
+                <Text style={{ fontWeight: "bold" }}>
+                  {item.course_name} - {item.lesson_name}
+                </Text>{" "}
+                at {moment(item.check_in_at).format("MMMM Do YYYY, h:mm:ss a")}
+              </Text>
+            </View>
+          ))
+        ) : (
+          <>
+            <View>
+              {!history_data ? null : (
+                <>
+                  {history_data.newHistory.length === 0 ? null : (
+                    <>
+                      <Text style={styles.txt_history_label}>New history</Text>
+                      {history_data?.newHistory.map((item, index) => (
+                        <View key={index} style={styles.v_history_item}>
+                          <View style={styles.v_icon_history}>
+                            <View style={styles.ic_history}>
+                              <Image
+                                style={{ height: 30, width: 30 }}
+                                source={require("../images/ic_accept.png")}
+                              />
+                            </View>
+                          </View>
+                          <Text style={{ fontSize: 16, flex: 0.8 }}>
+                            <Text
+                              style={{ color: "#1967D2", fontWeight: "700" }}
+                            >
+                              {item.student_name}
+                            </Text>{" "}
+                            checked in{" "}
+                            <Text style={{ fontWeight: "bold" }}>
+                              {item.course_name} - {item.lesson_name}
+                            </Text>{" "}
+                            at{" "}
+                            {moment(item.check_in_at).format(
+                              "MMMM Do YYYY, h:mm:ss a"
+                            )}
+                          </Text>
+                        </View>
+                      ))}
+                    </>
+                  )}
+                </>
+              )}
+            </View>
+            <View>
+              <Text style={styles.txt_history_label}>Older</Text>
+              {history_data?.oldHistory
+                ? history_data?.oldHistory.map((item, index) => (
+                    <View key={index} style={styles.v_history_item}>
+                      <View style={styles.v_icon_history}>
+                        <View style={styles.ic_history}>
+                          <Image
+                            style={{ height: 30, width: 30 }}
+                            source={require("../images/ic_accept.png")}
+                          />
+                        </View>
+                      </View>
+                      <Text style={{ fontSize: 16, flex: 0.8 }}>
+                        <Text style={{ color: "#1967D2", fontWeight: "700" }}>
+                          {item.student_name}
+                        </Text>{" "}
+                        checked in{" "}
+                        <Text style={{ fontWeight: "bold" }}>
+                          {item.course_name} - {item.lesson_name}
+                        </Text>{" "}
+                        at{" "}
+                        {moment(item.check_in_at).format(
+                          "MMMM Do YYYY, h:mm:ss a"
+                        )}
+                      </Text>
+                    </View>
+                  ))
+                : null}
+            </View>
+          </>
+        )}
       </ScrollView>
     </View>
   );
@@ -143,5 +226,37 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     marginLeft: 10,
     color: icon_color,
+  },
+
+  txt_history_label: {
+    fontSize: 18,
+    color: capital,
+    marginLeft: 20,
+    marginTop: 20,
+    fontWeight: "700",
+  },
+
+  v_history_item: {
+    backgroundColor: "#fff",
+    marginHorizontal: 15,
+    padding: 10,
+    marginTop: 10,
+    borderRadius: 20,
+    flexDirection: "row",
+    alignItems: "center",
+  },
+
+  v_icon_history: {
+    flex: 0.2,
+    alignItems: "center",
+  },
+
+  ic_history: {
+    height: 50,
+    width: 50,
+    backgroundColor: "#FFEEEC",
+    borderRadius: 30,
+    alignItems: "center",
+    justifyContent: "center",
   },
 });

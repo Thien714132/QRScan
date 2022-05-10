@@ -55,10 +55,22 @@ const Scanner = (props) => {
     // setQRReturn(JSON.parse(data));
     // alert(checkCondition(JSON.parse(data)));
     // if(JSON.parse(data))
-    if (JSON.parse(data).name) {
-      alert(
-        `name : ${JSON.parse(data).name} MSV: ${JSON.parse(data)?.student_id}`
-      );
+    if (JSON.parse(data).role) {
+      if (JSON.parse(data).role === "Student") {
+        alert(
+          `name : ${JSON.parse(data).name} MSV: ${
+            JSON.parse(data)?.MSV
+          } Phone: ${JSON.parse(data)?.phone} DOB: ${moment(
+            JSON.parse(data)?.DOB
+          ).format("DD MM YYYY")}`
+        );
+      } else {
+        alert(
+          `name : ${JSON.parse(data).name} Phone: ${
+            JSON.parse(data)?.phone
+          } DOB: ${moment(JSON.parse(data)?.DOB).format("DD MM YYYY")}`
+        );
+      }
     } else {
       checkCondition(JSON.parse(data));
     }

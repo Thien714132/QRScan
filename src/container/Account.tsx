@@ -28,10 +28,12 @@ import { deleteToken } from "../redux/actions/tokenAction";
 import { useSelector } from "react-redux";
 import { deleteUser } from "../redux/actions/userAction";
 import { deleteCourse } from "../redux/actions/coursesAction";
+import moment from "moment";
 
 const Account = () => {
   const { navigate } = useNavigation();
   const { user } = useSelector((state: any) => state.userState);
+  const [check, setCheck] = useState<any>(false);
 
   const getName = (name: any) => {
     if (name != undefined && name != null && name != {}) {
@@ -69,43 +71,130 @@ const Account = () => {
           </View>
         </View>
 
-        <View
-          style={{
-            paddingTop: 30,
-            paddingHorizontal: 20,
-            backgroundColor: main_color1,
-          }}
-        >
-          <Account_button
-            buttonName="Personal information"
-            iconName={require("../images/ic_user.png")}
-            iconColor="#F79A2D"
-            iconBackground="#FEF7ED"
-          />
+        {check ? (
+          <View>
+            <View style={{ marginHorizontal: 40, marginTop: 20 }}>
+              {user.role === "Student" ? (
+                <Account_button
+                  buttonName={user.student_code}
+                  iconName={require("../images/ic_id.png")}
+                  iconColor="#d84a4a"
+                  iconBackground="#fee8e8"
+                  right_arrow={false}
+                />
+              ) : null}
 
-          <Account_button
-            buttonName="Change password"
-            iconName={require("../images/ic_lock.png")}
-            iconColor="#14ABD6"
-            iconBackground="#EAF7FB"
-          />
+              <Account_button
+                buttonName={moment(user.date_of_birth).format("DD/MM/YYYY")}
+                iconName={require("../images/ic_birthday.png")}
+                iconColor="#F79A2D"
+                iconBackground="#FEF7ED"
+                right_arrow={false}
+              />
+              <Account_button
+                buttonName={user.email}
+                iconName={require("../images/ic_email.png")}
+                iconColor="#29d229"
+                iconBackground="#e9ffe9"
+                right_arrow={false}
+              />
+              <Account_button
+                buttonName={user.phone}
+                iconName={require("../images/ic_phone.png")}
+                iconColor="#14ABD6"
+                iconBackground="#EAF7FB"
+                right_arrow={false}
+              />
+            </View>
 
-          <Account_button
-            buttonName="Dark mode"
-            iconName={require("../images/ic_dark_mode.png")}
-            iconColor="#5A6175"
-            iconBackground="#F2F3F4"
-            switches={true}
-          />
+            <View
+              style={{
+                flexDirection: "row",
+                justifyContent: "space-around",
+                marginHorizontal: 50,
+              }}
+            >
+              <TouchableOpacity
+                onPress={() => navigate(Routes.USER_DETAIL)}
+                style={{
+                  backgroundColor: icon_color,
+                  padding: 10,
+                  width: 100,
+                  borderRadius: 20,
+                  alignSelf: "center",
+                  justifyContent: "center",
+                  alignItems: "center",
+                  marginBottom: 20,
+                }}
+              >
+                <Text
+                  style={{ fontWeight: "bold", fontSize: 18, color: "#fff" }}
+                >
+                  Change
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => setCheck(!check)}
+                style={{
+                  backgroundColor: icon_color,
+                  padding: 10,
+                  width: 100,
+                  borderRadius: 20,
+                  alignSelf: "center",
+                  justifyContent: "center",
+                  alignItems: "center",
+                  marginBottom: 20,
+                }}
+              >
+                <Text
+                  style={{ fontWeight: "bold", fontSize: 18, color: "#fff" }}
+                >
+                  Close
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        ) : (
+          <View
+            style={{
+              paddingTop: 30,
+              paddingHorizontal: 20,
+              backgroundColor: main_color1,
+            }}
+          >
+            <Account_button
+              buttonName="Personal information"
+              iconName={require("../images/ic_user.png")}
+              iconColor="#F79A2D"
+              iconBackground="#FEF7ED"
+              onPress={() => setCheck(!check)}
+            />
 
-          <Account_button
-            buttonName="Log out"
-            iconName={require("../images/ic_logout.png")}
-            iconColor="#d84a4a"
-            iconBackground="#fee8e8"
-            onPress={onSignOut}
-          />
-        </View>
+            <Account_button
+              buttonName="Change password"
+              iconName={require("../images/ic_lock.png")}
+              iconColor="#14ABD6"
+              iconBackground="#EAF7FB"
+              onPress={() => navigate(Routes.CHANGE_PASSWORD)}
+            />
+
+            <Account_button
+              buttonName="Dark mode"
+              iconName={require("../images/ic_dark_mode.png")}
+              iconColor="#5A6175"
+              iconBackground="#F2F3F4"
+              switches={true}
+            />
+
+            <Account_button
+              buttonName="Log out"
+              iconName={require("../images/ic_logout.png")}
+              iconColor="#d84a4a"
+              iconBackground="#fee8e8"
+              onPress={onSignOut}
+            />
+          </View>
+        )}
       </ScrollView>
     </SafeAreaView>
   );
@@ -167,5 +256,32 @@ const styles = StyleSheet.create({
     color: regular,
     marginTop: 5,
     marginBottom: 20,
+  },
+
+  header: {
+    paddingHorizontal: 15,
+    width: "100%",
+    paddingVertical: 20,
+    flexDirection: "row",
+    alignItems: "center",
+  },
+
+  V_back_button: {
+    // flex: 0.1,
+    flexDirection: "row",
+    alignItems: "center",
+  },
+
+  img_header_icon: {
+    height: 17,
+    width: 17,
+    tintColor: icon_color,
+  },
+
+  txt_header: {
+    fontSize: 20,
+    fontWeight: "bold",
+    marginLeft: 10,
+    color: icon_color,
   },
 });

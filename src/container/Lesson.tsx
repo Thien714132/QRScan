@@ -91,6 +91,22 @@ const Lesson = (props) => {
     }
   };
 
+  const convertSession = (sess: any) => {
+    var a = "";
+    if (sess === 1) {
+      a = "7:00 - 9:30";
+    } else if (sess === 2) {
+      a = "9:30 - 12:00";
+    } else if (sess === 3) {
+      a = "12:30 - 15:00";
+    } else if (sess === 4) {
+      a = "15:00 - 17:30";
+    } else if (sess === 5) {
+      a = "18:00 - 21:30";
+    }
+    return a;
+  };
+
   const renderCheckInItem = (i: any, e: any) => {
     return (
       <View
@@ -101,7 +117,7 @@ const Lesson = (props) => {
             // width: "100%",
             // paddingTop: 20,
             paddingVertical: 10,
-            // marginHorizontal: 15,
+            marginHorizontal: 10,
             // borderRadius: 20,
             flexDirection: "row",
             borderBottomWidth: 0.2,
@@ -152,6 +168,7 @@ const Lesson = (props) => {
           end={[1, 0]}
           style={{ paddingTop: 20 }}
         >
+          <View style={{ borderStartColor: "#fff" }}></View>
           {user?.role === "Teacher" ? (
             <>
               {lessonData?.qr_code !== " " ? (
@@ -222,32 +239,44 @@ const Lesson = (props) => {
             // alignItems: "center",
             backgroundColor: "#fff",
             // paddingHorizontal: 20,
-            paddingTop: 10,
+            paddingTop: 20,
             marginHorizontal: 20,
             borderRadius: 20,
+            paddingBottom: 20,
+            marginBottom: 20,
           }}
         >
-          <View
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              marginBottom: 10,
-              paddingHorizontal: 20,
-            }}
-          >
-            <Text style={{ fontSize: 20, fontWeight: "700", color: capital }}>
-              Attendance - {lessonData?.name}
-            </Text>
-            <TouchableOpacity
-              style={{ position: "absolute", right: 20 }}
-              onPress={getLessonData}
+          <View style={{}}>
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                marginBottom: 5,
+                paddingHorizontal: 20,
+              }}
             >
-              <Image
-                style={{ height: 25, width: 25 }}
-                source={require("../images/ic_refresh.png")}
-              />
-            </TouchableOpacity>
+              <Text style={{ fontSize: 20, fontWeight: "700", color: capital }}>
+                Attendance - {lessonData?.name}
+              </Text>
+
+              <TouchableOpacity
+                style={{ position: "absolute", right: 20 }}
+                onPress={getLessonData}
+              >
+                <Image
+                  style={{ height: 25, width: 25 }}
+                  source={require("../images/ic_refresh.png")}
+                />
+              </TouchableOpacity>
+            </View>
+            <Text
+              style={{ marginLeft: 20, marginBottom: 10, color: icon_color }}
+            >
+              {convertSession(lessonData?.shift)} (
+              {moment(lessonData?.lesson_date).format("DD/MM/YYYY")})
+            </Text>
           </View>
+
           {/* {console.log("___A", history_data)} */}
           {/* <View style={styles.v_checkIn_list}> */}
           {history_data?.history

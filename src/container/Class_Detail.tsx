@@ -260,8 +260,8 @@ const Class_detail = memo((props: any) => {
 
           <Class_information
             imageStyle={{ tintColor: "#29d229" }}
-            information={lessonData?.course?.location}
-            iconName={require("../images/ic_location.png")}
+            information={`${lessonData?.course?.start_date} - ${lessonData?.course?.end_date}`}
+            iconName={require("../images/ic_history.png")}
             iconBackground={"#e9ffe9"}
           />
         </View>

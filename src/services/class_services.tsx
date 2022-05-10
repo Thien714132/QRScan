@@ -32,3 +32,12 @@ export const getHistoryByStudent = (token: string, id: any) =>
 
 export const getClassDetail = (token: string, id: any) =>
   request.get(`/api/courses/${id}`, {}, token);
+
+export const getHistoryByTeacher = (token: string, id: any) =>
+  request.get(`/api/history/teacher/${id}`, {}, token);
+
+export const chengePassword = (token: string, id: any, data: any) =>
+  request.put(`/api/user/password/${id}`, data, token);
+
+export const changeInfor = (token: string, id: any, data: any) =>
+  request.put(`/api/user/${id}`, data, token);
