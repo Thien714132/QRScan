@@ -1,47 +1,35 @@
 import { useNavigation } from "@react-navigation/native";
-import React, { memo, useState, useCallback, useEffect } from "react";
-import {
-  View,
-  StyleSheet,
-  TouchableOpacity,
-  Image,
-  TextInput,
-  Text,
-  ImageBackground,
-  KeyboardAvoidingView,
-  Platform,
-  TouchableWithoutFeedback,
-  Keyboard,
-  Button,
-  Dimensions,
-  ScrollView,
-  RefreshControl,
-} from "react-native";
-import { BarCodeScanner } from "expo-barcode-scanner";
-import scale from "../configs/scale";
-import Scanner from "../components/Sacnner";
-import { useSelector } from "react-redux";
-import {
-  getClassDetail,
-  getHistoryByStudent,
-  getHistoryByTeacher,
-} from "../services/class_services";
 import moment from "moment";
-import { capital, icon_color, main_color1 } from "../configs/Colors";
+import React, { useEffect, useState } from "react";
+import {
+  Image,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { useSelector } from "react-redux";
+import { capital, icon_color } from "../configs/Colors";
 import { TEXT } from "../configs/TEXT";
 import { setHistory } from "../redux/actions/historyAction";
+import { getHistoryByTeacher } from "../services/class_services";
 
 const History = () => {
   const { user } = useSelector((state: any) => state.userState);
+  const { token } = useSelector((state: any) => state.tokenState);
   const [history_data, set_history_data] = useState<any>();
   const { history } = useSelector((state: any) => state.historyState);
   const { goBack, navigate } = useNavigation();
   const [refreshing, setRefreshing] = React.useState(false);
 
+  // console.log("alooo", history);
+
   const onRefresh = React.useCallback(async () => {
     if (user.role === "Teacher") {
       setRefreshing(true);
-      const historyData = await getHistoryByTeacher(null, user._id);
+      const historyData = await getHistoryByTeacher(token, user._id);
       if (history?.history !== []) {
         setHistory(historyData);
         setRefreshing(false);
@@ -58,26 +46,30 @@ const History = () => {
       history?.history.map((item) => {
         for (var i = 0; i < item.length; i++) {
           if (
-            new Date().getTime() - new Date(item[i].check_in_at).getTime() <
+            Date.now() -
+              61200000 -
+              (new Date(item[i].check_in_at).getTime() + 21600000) <
             7200000
           ) {
             finalHistory.newHistory.push(item[i]);
           } else finalHistory.oldHistory.push(item[i]);
         }
       });
+      finalHistory.newHistory.reverse();
+      finalHistory.oldHistory.reverse();
+      set_history_data(finalHistory);
     }
-    set_history_data(finalHistory);
-    // console.log(finalHistory);
+
+    // console.log(new Date(item[i].check_in_at).getTime() + 21600000);
+    console.log(new Date(moment().format()).getTime() - 61200000);
+
+    var myDate = new Date("/Date(1655406381000)/".match(/\d+/)[0] * 1);
+    console.log(myDate);
   };
 
   useEffect(() => {
     formatistory();
   }, [refreshing]);
-
-  // console.log(
-  //   new Date("2022-05-07T07:07:00.000Z").getTime() -
-  //     new Date("2022-05-07T09:07:00.000Z").getTime()
-  // );
 
   return (
     <View style={styles.container}>
@@ -97,7 +89,7 @@ const History = () => {
         }
       >
         {history?.history && user.role === "Student" ? (
-          history?.history.map((item, index) => (
+          history?.history.reverse().map((item, index) => (
             <View key={index} style={styles.v_history_item}>
               <View style={styles.v_icon_history}>
                 <View style={styles.ic_history}>

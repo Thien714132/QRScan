@@ -1,36 +1,26 @@
 import { useNavigation } from "@react-navigation/native";
-import React, { memo, useState, useCallback, useEffect } from "react";
+import { LinearGradient } from "expo-linear-gradient";
+import React, { useState } from "react";
 import {
-  View,
-  StyleSheet,
-  TouchableOpacity,
-  Image,
-  TextInput,
-  Text,
-  ImageBackground,
-  KeyboardAvoidingView,
-  Platform,
-  TouchableWithoutFeedback,
-  Keyboard,
-  Button,
-  Dimensions,
   Alert,
+  Image,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
-import { BarCodeScanner } from "expo-barcode-scanner";
-import scale from "../configs/scale";
-import Scanner from "../components/Sacnner";
+import { useSelector } from "react-redux";
 import {
   icon_color,
-  icon_color_2,
   main_color1,
   main_color2,
   regular,
 } from "../configs/Colors";
+import scale from "../configs/scale";
 import { TEXT } from "../configs/TEXT";
-import { LinearGradient } from "expo-linear-gradient";
-import { chengePassword } from "../services/class_services";
-import { useSelector } from "react-redux";
 import { deleteToken } from "../redux/actions/tokenAction";
+import { chengePassword } from "../services/class_services";
 
 const Change_password = () => {
   const { goBack, navigate } = useNavigation();
@@ -42,6 +32,7 @@ const Change_password = () => {
   const [confirmNewPass, setConfirmNewPass] = useState("");
   const [check, setCheck] = useState<any>();
   const { user } = useSelector((state: any) => state.userState);
+  const { token } = useSelector((state: any) => state.tokenState);
 
   const validateForm = async () => {
     if (password === "") {
@@ -53,7 +44,7 @@ const Change_password = () => {
     } else if (confirmNewPass !== newPass) {
       Alert.alert("Confirm new password an new password are not the same");
     } else {
-      const temp = await chengePassword(null, user._id, {
+      const temp = await chengePassword(token, user._id, {
         current_password: password,
         password: newPass,
       });

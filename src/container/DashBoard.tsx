@@ -1,46 +1,46 @@
 import { useNavigation } from "@react-navigation/native";
 import { LinearGradient } from "expo-linear-gradient";
-import React, { memo, useState, useCallback, useEffect } from "react";
+import moment from "moment";
+import React, { useEffect, useState } from "react";
 import {
-  View,
-  StyleSheet,
-  TouchableOpacity,
   Image,
-  TextInput,
-  Text,
-  ImageBackground,
-  KeyboardAvoidingView,
-  Platform,
-  TouchableWithoutFeedback,
-  Keyboard,
-  ScrollView,
   SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
+import SvgQRCode from "react-native-qrcode-svg";
+import { useSelector } from "react-redux";
 import Button from "../components/Button";
-import { capital, main_color1, main_color2, regular } from "../configs/Colors";
+import Loading from "../components/Loading";
+import { capital, main_color1, main_color2 } from "../configs/Colors";
 import Routes from "../configs/Routes";
 import scale from "../configs/scale";
 import { TEXT } from "../configs/TEXT";
-import SvgQRCode from "react-native-qrcode-svg";
-import { useSelector } from "react-redux";
-import moment from "moment";
 
 const DashBoard = () => {
   const { navigate } = useNavigation();
   const { user } = useSelector((state: any) => state.userState);
-  let userName: String;
-  user ? (userName = `, ${user?.name}`) : "There";
+  // let userName: String;
+  // user ? (userName = `, ${user?.name}`) : "There";
   const { history } = useSelector((state: any) => state.historyState);
   const [historyLength, setHistoryLength] = useState<any>(0);
   const [turn_on_red_dot, set_turn_on_red_dot] = useState<any>(false);
+  const [turnOnLoading, setTurnOnLoading] = useState(true);
 
   const getChange = async () => {
-    if (history) {
-      if (historyLength < history?.history.length) {
-        set_turn_on_red_dot(true);
-        setHistoryLength(history?.history.length);
-      } else set_turn_on_red_dot(false);
-      // console.log(history.history.length);
+    try {
+      if (history) {
+        if (historyLength < history?.history.length) {
+          set_turn_on_red_dot(true);
+          setHistoryLength(history?.history.length);
+        } else set_turn_on_red_dot(false);
+        // console.log(history.history.length);
+      }
+    } catch (error) {
+      console.log(error);
     }
   };
 
@@ -48,9 +48,15 @@ const DashBoard = () => {
     getChange();
   }, [history]);
 
+  console.log(moment().format());
+
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView>
+      {Object.keys(user).length === 0 && user.constructor === Object ? (
+        <Loading />
+      ) : null}
+
+      <ScrollView style={{ backgroundColor: main_color1 }}>
         <LinearGradient
           colors={[main_color1, main_color2]}
           start={[1, 1]}
@@ -69,7 +75,7 @@ const DashBoard = () => {
                   textTransform: "capitalize",
                 }}
               >
-                {TEXT.DASHBOARD.Hi} {userName}
+                {TEXT.DASHBOARD.Hi} {user?.name}
               </Text>
             </View>
             <TouchableOpacity style={styles.v_bellIcon}>
@@ -149,7 +155,7 @@ const DashBoard = () => {
 
               <Button
                 buttonName={TEXT.DASHBOARD.SUPPORT}
-                // onPress={() => navigate(Routes.CALENDAR)}
+                onPress={() => navigate(Routes.SUPPORT)}
                 iconName={require("../images/ic_support.png")}
                 iconColor="#d84a4a"
                 iconBackground="#fee8e8"
@@ -190,7 +196,7 @@ const styles = StyleSheet.create({
   },
 
   v_scrollView: {
-    // paddingBottom: '15%'
+    // paddingBottom: "15%",
   },
 
   v_header: {
@@ -253,6 +259,7 @@ const styles = StyleSheet.create({
   v_dashBoard: {
     alignItems: "center",
     backgroundColor: main_color1,
+    height: "100%",
   },
 
   v_dashBoard_label: {

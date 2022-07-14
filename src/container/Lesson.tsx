@@ -1,25 +1,24 @@
-import { useNavigation } from "@react-navigation/native";
-import React, { memo, useState, useCallback, useEffect } from "react";
+import { Picker } from "@react-native-picker/picker";
+import { useFocusEffect, useNavigation } from "@react-navigation/native";
+import { LinearGradient } from "expo-linear-gradient";
+import * as Network from "expo-network";
+import moment from "moment";
+import React, { useCallback, useEffect, useState } from "react";
 import {
-  View,
-  StyleSheet,
-  TouchableOpacity,
+  Alert,
   Image,
-  TextInput,
-  Text,
-  ImageBackground,
-  KeyboardAvoidingView,
-  Platform,
-  TouchableWithoutFeedback,
+  Modal,
   SafeAreaView,
   ScrollView,
-  TextInputComponent,
-  Button,
-  Modal,
-  PermissionsAndroid,
-  NativeModules,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import SvgQRCode from "react-native-qrcode-svg";
+import { useSelector } from "react-redux";
+import Loading from "../components/Loading";
+import Scanner from "../components/Sacnner";
 import {
   capital,
   icon_color,
@@ -28,27 +27,16 @@ import {
   main_color2,
   regular,
 } from "../configs/Colors";
-import Routes from "../configs/Routes";
-import { LinearGradient } from "expo-linear-gradient";
-import getName from "../components/Get_first_letter";
+import scale from "../configs/scale";
 import {
   createQRCode,
-  getAllClasses,
   getHistory,
   getLessonDetail,
 } from "../services/class_services";
-import { useSelector } from "react-redux";
-import scale from "../configs/scale";
-import Scanner from "../components/Sacnner";
-import * as Location from "expo-location";
-import moment from "moment";
-import NetInfo, { useNetInfo } from "@react-native-community/netinfo";
-import * as Device from "expo-device";
-import * as Network from "expo-network";
-import Loading from "../components/Loading";
 
 const Lesson = (props) => {
   const { user } = useSelector((state: any) => state.userState);
+  const { token } = useSelector((state: any) => state.tokenState);
   const { route } = props;
   const { lesson_id, course_name } = route.params;
   const { goBack, navigate } = useNavigation();
@@ -56,22 +44,37 @@ const Lesson = (props) => {
   const [history_data, setHistory] = useState<any>([]);
   const [modalVisible, setModalVisible] = useState(false);
   const [turnOnLoading, setTurnOnLoading] = useState(false);
+  const [selectedLanguage, setSelectedLanguage] = useState("2");
 
   const getLessonData = async () => {
-    const lesson = await getLessonDetail(null, lesson_id);
+    const lesson = await getLessonDetail(token, lesson_id);
+    var A = {};
     if (lesson) {
-      const historyData = await getHistory(null, lesson._id);
+      const historyData = await getHistory(token, lesson._id);
+      if (user.role === "Student") {
+        if (historyData?.history.length > 0) {
+          A.history = historyData?.history.filter(
+            (item) => item.student_id === user._id
+          );
+          setHistory(A);
+        }
+      }
       // console.log(historyData);
-      setHistory(historyData);
+      else setHistory(historyData);
     }
-
     // console.log(lesson);
     setLessonData(lesson);
   };
 
-  useEffect(() => {
-    getLessonData();
-  }, []);
+  // useEffect(() => {
+  //   getLessonData();
+  // }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      getLessonData();
+    }, [])
+  );
 
   useEffect(() => {
     if (!lessonData) {
@@ -80,16 +83,22 @@ const Lesson = (props) => {
   }, [lessonData]);
 
   const createQR = async () => {
-    // console.log(lessonData);
+    var myDate: any = moment().format();
+    const ip = await Network.getIpAddressAsync();
     if (lessonData !== undefined && lessonData !== null) {
-      const data = await createQRCode(lessonData?._id, {
-        qr_code: `{"date":"${moment(moment()).format()}","_id":"${
+      const data = await createQRCode(token, lessonData?._id, {
+        qr_code: `{"date":"${moment().format()}","_id":"${
           lessonData._id
-        }"}`,
+        }", "ip": "${ip}", "expireTime":"${selectedLanguage}"} `,
       });
+      if (data?.lesson) {
+        setModalVisible(!modalVisible);
+      } else Alert.alert("Create failed");
       getLessonData();
     }
   };
+
+  console.log("lesson", moment().format());
 
   const convertSession = (sess: any) => {
     var a = "";
@@ -112,37 +121,35 @@ const Lesson = (props) => {
       <View
         key={i._id}
         style={[
-          {
-            backgroundColor: "#fff",
-            // width: "100%",
-            // paddingTop: 20,
-            paddingVertical: 10,
-            marginHorizontal: 10,
-            // borderRadius: 20,
-            flexDirection: "row",
+          styles.v_check_in_item,
+          e % 2 == 0 && { backgroundColor: "#FFEEEC" },
+          user.role === "Teacher" && {
             borderBottomWidth: 0.2,
             borderColor: regular,
           },
-          e % 2 == 0 && { backgroundColor: "#FFEEEC" },
         ]}
       >
-        <View style={{ marginHorizontal: 10, justifyContent: "center" }}>
-          <Text style={{ fontSize: 15 }}>{e + 1}</Text>
-        </View>
+        {user.role === "Teacher" ? (
+          <View style={styles.v_index}>
+            <Text style={{ fontSize: 15 }}>{e + 1}</Text>
+          </View>
+        ) : null}
+
         <View
-          style={{
-            justifyContent: "center",
-            borderLeftWidth: 0.2,
-            borderColor: regular,
-            paddingLeft: 10,
-          }}
+          style={[
+            styles.v_check_in_infor,
+            user.role === "Teacher" && {
+              borderLeftWidth: 0.2,
+              borderColor: regular,
+            },
+          ]}
         >
           <Text style={{ fontSize: 17 }}>
             {i.student_name} - {i.student_code}
           </Text>
           <Text style={{ color: regular }}>
-            Check in at{" "}
-            {moment(i.check_in_at).format("MMMM Do YYYY, h:mm:ss a")}
+            Check in at {moment(i.check_in_at).format("DD-MM-YYYY, h:mm:ss a")}{" "}
+            by {i.device_name}
           </Text>
         </View>
       </View>
@@ -192,7 +199,7 @@ const Lesson = (props) => {
 
               <View style={styles.v_create_qr}>
                 <TouchableOpacity
-                  onPress={createQR}
+                  onPress={() => setModalVisible(true)}
                   style={[
                     styles.bt_qrcode,
                     { marginRight: 20, backgroundColor: "#29D277" },
@@ -231,30 +238,9 @@ const Lesson = (props) => {
           )}
         </LinearGradient>
 
-        <View
-          style={{
-            marginTop: 30,
-            // marginLeft: 20,
-            // flexDirection: "row",
-            // alignItems: "center",
-            backgroundColor: "#fff",
-            // paddingHorizontal: 20,
-            paddingTop: 20,
-            marginHorizontal: 20,
-            borderRadius: 20,
-            paddingBottom: 20,
-            marginBottom: 20,
-          }}
-        >
+        <View style={styles.v_attendance_list}>
           <View style={{}}>
-            <View
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                marginBottom: 5,
-                paddingHorizontal: 20,
-              }}
-            >
+            <View style={styles.v_attendance_header}>
               <Text style={{ fontSize: 20, fontWeight: "700", color: capital }}>
                 Attendance - {lessonData?.name}
               </Text>
@@ -296,21 +282,78 @@ const Lesson = (props) => {
           setModalVisible(!modalVisible);
         }}
       >
-        <View style={{ flex: 1, backgroundColor: "#fff" }}>
-          <Scanner lesson_Data={lessonData?._id} />
-          <TouchableOpacity
-            onPress={() => {
-              setModalVisible(false);
-              getLessonData();
-            }}
-            style={{ position: "absolute", top: 30, left: 15 }}
-          >
-            <Image
-              style={styles.img_header_icon}
-              source={require("../images/ic_close.png")}
+        {user.role === "Student" ? (
+          <View style={{ flex: 1, backgroundColor: "#fff" }}>
+            <Scanner
+              lesson_Data={lessonData?._id}
+              onPress={() => setModalVisible(false)}
             />
-          </TouchableOpacity>
-        </View>
+            <TouchableOpacity
+              onPress={() => {
+                setModalVisible(false);
+                getLessonData();
+              }}
+              style={{ position: "absolute", top: 30, left: 15 }}
+            >
+              <Image
+                style={styles.img_header_icon}
+                source={require("../images/ic_close.png")}
+              />
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <View
+            style={{ justifyContent: "center", alignItems: "center", flex: 1 }}
+          >
+            <View style={styles.v_pick_time}>
+              <TouchableOpacity
+                onPress={() => {
+                  setModalVisible(false);
+                  getLessonData();
+                }}
+                style={{ position: "absolute", top: 30, left: 15 }}
+              >
+                <Image
+                  style={styles.img_header_icon}
+                  source={require("../images/ic_close.png")}
+                />
+              </TouchableOpacity>
+              <View style={styles.v_pick_field}>
+                <Text style={{ flex: 0.5, fontSize: 18, fontWeight: "bold" }}>
+                  Expire time
+                </Text>
+                <Picker
+                  style={{ flex: 0.5 }}
+                  selectedValue={selectedLanguage}
+                  onValueChange={(itemValue, itemIndex) =>
+                    setSelectedLanguage(itemValue)
+                  }
+                  mode={"dropdown"}
+                >
+                  <Picker.Item label="2 phút" value="2" />
+                  <Picker.Item label="3 phút" value="3" />
+                  <Picker.Item label="4 phút" value="4" />
+                  <Picker.Item label="5 phút" value="5" />
+                  <Picker.Item label="6 phút" value="6" />
+                  <Picker.Item label="7 phút" value="7" />
+                </Picker>
+              </View>
+              <TouchableOpacity
+                onPress={() => createQR()}
+                style={[
+                  styles.bt_qrcode,
+                  { marginRight: 20, backgroundColor: "#29D277" },
+                ]}
+              >
+                <Image
+                  source={require("../images/ic_pencil.png")}
+                  style={styles.img_button_qr}
+                />
+                <Text style={styles.txt_button_qr}>Create</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
       </Modal>
     </SafeAreaView>
   );
@@ -439,5 +482,71 @@ const styles = StyleSheet.create({
     marginHorizontal: 20,
     paddingVertical: 10,
     marginBottom: 30,
+  },
+
+  v_attendance_list: {
+    marginTop: 30,
+    // marginLeft: 20,
+    // flexDirection: "row",
+    // alignItems: "center",
+    backgroundColor: "#fff",
+    // paddingHorizontal: 20,
+    paddingTop: 20,
+    marginHorizontal: 20,
+    borderRadius: 20,
+    paddingBottom: 20,
+    marginBottom: 20,
+  },
+
+  v_attendance_header: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 5,
+    paddingHorizontal: 20,
+  },
+
+  v_pick_time: {
+    height: 350,
+    width: 300,
+    backgroundColor: "#fff",
+    justifyContent: "center",
+    alignItems: "center",
+    borderRadius: 20,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 7,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 10,
+    elevation: 3,
+  },
+
+  v_pick_field: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    marginHorizontal: 30,
+    marginBottom: 20,
+  },
+
+  v_index: {
+    marginHorizontal: 10,
+    justifyContent: "center",
+    flex: 0.05,
+    alignItems: "center",
+  },
+
+  v_check_in_infor: {
+    justifyContent: "center",
+    paddingLeft: 10,
+    flex: 0.95,
+  },
+
+  v_check_in_item: {
+    backgroundColor: "#fff",
+    paddingVertical: 10,
+    marginHorizontal: 10,
+    flexDirection: "row",
   },
 });

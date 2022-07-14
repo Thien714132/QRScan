@@ -1,13 +1,12 @@
-import React, { useCallback, useMemo, useState } from "react";
-import { View, StyleSheet, SafeAreaView } from "react-native";
 import { NavigationContainer } from "@react-navigation/native";
-import {
-  SafeAreaProvider,
-  initialWindowMetrics,
-} from "react-native-safe-area-context";
-import RootStack from "./src/navigations";
 import { StatusBar } from "expo-status-bar";
-import { Provider, useSelector } from "react-redux";
+import React from "react";
+import { SafeAreaView, StyleSheet, View } from "react-native";
+import {
+  initialWindowMetrics, SafeAreaProvider
+} from "react-native-safe-area-context";
+import { Provider } from "react-redux";
+import RootStack from "./src/navigations";
 import { store } from "./src/redux/reducer";
 
 

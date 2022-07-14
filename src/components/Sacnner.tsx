@@ -1,27 +1,21 @@
 import { useNavigation } from "@react-navigation/native";
-import React, { memo, useState, useCallback, useEffect } from "react";
-import {
-  View,
-  StyleSheet,
-  TouchableOpacity,
-  Image,
-  TextInput,
-  Text,
-  ImageBackground,
-  KeyboardAvoidingView,
-  Platform,
-  TouchableWithoutFeedback,
-  Keyboard,
-  Button,
-  Dimensions,
-} from "react-native";
 import { BarCodeScanner } from "expo-barcode-scanner";
-import scale from "../configs/scale";
-import { SafeAreaView } from "react-native-safe-area-context";
+import * as Device from "expo-device";
+import * as Network from "expo-network";
 import moment from "moment";
+import React, { useEffect, useState } from "react";
+import {
+  Alert,
+  Dimensions,
+  Image,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { useSelector } from "react-redux";
-import { createHistory, getHistoryByStudent } from "../services/class_services";
 import { setHistory } from "../redux/actions/historyAction";
+import { createHistory, getHistoryByStudent } from "../services/class_services";
 
 const A = {
   date: "2022-05-03T15:18:50+07:00",
@@ -30,13 +24,14 @@ const A = {
 
 const Scanner = (props) => {
   const { goBack } = useNavigation();
-  const { lesson_Data, onPress } = props;
+  const { lesson_Data, onPress, expireTime } = props;
   const [hasPermission, setHasPermission] = useState(null);
   const [scanned, setScanned] = useState(false);
   const windowWidth = Dimensions.get("window").width;
   const windowHeight = Dimensions.get("window").height;
   const [qr_return, setQRReturn] = useState<any>(" ");
   const { user } = useSelector((state: any) => state.userState);
+  const { token } = useSelector((state: any) => state.tokenState);
 
   useEffect(() => {
     (async () => {
@@ -88,7 +83,19 @@ const Scanner = (props) => {
     const LesonNow = {
       _id: lesson_Data,
       date: moment().format(),
+      ip: await Network.getIpAddressAsync(),
     };
+
+    console.log(LesonNow.ip);
+    console.log(ScanData.ip);
+
+    const convertIPScan = ScanData.ip.split(".");
+    const convertIPSlesson = LesonNow.ip.split(".");
+    const condition =
+      convertIPScan[0] === convertIPSlesson[0] &&
+      convertIPScan[1] === convertIPSlesson[1];
+    // &&
+    // convertIPScan[2] === convertIPSlesson[2];
     // console.log(
     //   ScanData._id,
     //   new Date(LesonNow.date).getTime(),
@@ -97,26 +104,47 @@ const Scanner = (props) => {
     //   new Date(ScanData.date).getTime(),
     //   ScanData.date
     // );
+    console.log("now", moment().format());
+    console.log("scandate", ScanData.date);
+    console.log(
+      "count",
+      new Date(moment().format()).getTime() -
+        86400000 -
+        new Date(ScanData.date).getTime()
+    );
+    // console.log(
+    //   new Date("2022-06-22T14:17:11.000Z").getTime() -
+    //     new Date("2022-06-22T14:16:11.000Z").getTime()
+    // );
+
     if (
       ScanData._id === LesonNow._id &&
-      new Date(LesonNow.date).getTime() - new Date(ScanData.date).getTime() <
-        300000
+      new Date(moment().format()).getTime() +
+        86400000 -
+        new Date(ScanData.date).getTime() <
+        parseInt(ScanData.expireTime) * 60000 &&
+      condition
     ) {
-      const A = await createHistory({
+      const A = await createHistory(token, {
         lesson_id: LesonNow._id,
         student_id: user._id,
         check_in_at: LesonNow.date,
+        device_name: `${Device.modelName} - ${Device.deviceName}`,
       });
       // console.log(A);
       if (A.history) {
-        alert("Điểm danh thành công");
-        const historyData = await getHistoryByStudent(null, user._id);
+        Alert.alert("Thành công", `Chúc mừng bạn đã điểm danh thành công`, [
+          { text: "OK", onPress: onPress },
+        ]);
+        const historyData = await getHistoryByStudent(token, user._id);
         setHistory(historyData);
       } else alert(A.message);
     }
     // return "Điểm danh thất bại";
     else alert("Điểm danh thất bại");
   };
+
+  // console.log("+++++", moment().format());
 
   return (
     <View style={styles.container}>
@@ -162,17 +190,7 @@ const Scanner = (props) => {
       >
         {scanned && (
           <TouchableOpacity
-            style={{
-              position: "absolute",
-              top: 50,
-              alignSelf: "center",
-              height: 40,
-              width: 150,
-              backgroundColor: "#EFC93B",
-              alignItems: "center",
-              justifyContent: "center",
-              borderRadius: 20,
-            }}
+            style={styles.scanAgain}
             onPress={() => setScanned(false)}
           >
             <Text>Tap to Scan Again</Text>
@@ -188,5 +206,17 @@ export default Scanner;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+
+  scanAgain: {
+    position: "absolute",
+    top: 50,
+    alignSelf: "center",
+    height: 40,
+    width: 150,
+    backgroundColor: "#EFC93B",
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 20,
   },
 });

@@ -1,45 +1,46 @@
 import { useNavigation } from "@react-navigation/native";
-import React, { memo, useState, useCallback, useEffect } from "react";
+import React, { memo, useEffect, useState } from "react";
 import {
-  View,
-  StyleSheet,
-  TouchableOpacity,
+  Alert,
+  FlatList,
   Image,
-  TextInput,
-  Text,
-  ImageBackground,
-  KeyboardAvoidingView,
-  Platform,
-  TouchableWithoutFeedback,
+  Modal,
+  PermissionsAndroid,
   SafeAreaView,
   ScrollView,
-  TextInputComponent,
-  Button,
-  FlatList,
-  Modal,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
-import SvgQRCode from "react-native-qrcode-svg";
+import { useSelector } from "react-redux";
+import Class_information from "../components/Class_information";
+import Loading from "../components/Loading";
 import {
   capital,
   icon_color,
-  icon_color_2,
   main_color1,
   main_color2,
   regular,
 } from "../configs/Colors";
-import Routes from "../configs/Routes";
-import { LinearGradient } from "expo-linear-gradient";
-import Class_information from "../components/Class_information";
 import Constants from "../configs/Constants";
+import Routes from "../configs/Routes";
+import { TEXT } from "../configs/TEXT";
 import {
+  deleteLesson,
   getCourseStatistic,
   getLessonByCourse,
 } from "../services/class_services";
-import { useSelector } from "react-redux";
-import { TEXT } from "../configs/TEXT";
+import * as FileSystem from "expo-file-system";
+// ExcelJS
+import ExcelJS from "exceljs";
+// Share excel via share dialog
+import * as Sharing from "expo-sharing";
+// From @types/node/buffer
+import { Buffer as NodeBuffer } from "buffer";
 
 function Statistics(props) {
-  const { statistics_data, numberOfLesson } = props;
+  const { statistics_data, numberOfLesson, course_name } = props;
   const [focusIndex, setFocusIndex] = useState<any>(0);
   const [focus, setFocus] = useState<any>(false);
 
@@ -50,6 +51,110 @@ function Statistics(props) {
       var letter = values[values.length - 1].charAt(0);
       return letter;
     }
+  };
+
+  const generateShareableExcel = async (): Promise<string> => {
+    const now = new Date();
+    const fileName = "Thong_ke_diem_danh.xlsx";
+    const fileUri = FileSystem.cacheDirectory + fileName;
+    return new Promise<string>((resolve, reject) => {
+      const workbook = new ExcelJS.Workbook();
+      workbook.creator = "Me";
+      workbook.created = now;
+      workbook.modified = now;
+      // Add a sheet to work on
+      const worksheet = workbook.addWorksheet("My sheet", {});
+
+      worksheet.mergeCells("A1", "J2");
+      worksheet.getCell("A1").value = course_name;
+
+      worksheet.getRow(5).values = [
+        "Stt",
+        "Họ và tên",
+        "Mã sinh viên",
+        "Số buổi điểm danh",
+        "Buổi điểm danh",
+      ];
+
+      // worksheet.columns = [
+      //   { header: "Stt", key: "index", width: 5 },
+      //   { header: "Họ và tên", key: "name", width: 30 },
+      //   { header: "Mã sinh viên", key: "student_code", width: 20 },
+      //   { header: "Số buổi điểm danh", key: "attendance", width: 15 },
+      //   { header: "Buổi điểm danh", key: "lesson_attendance", width: 110 },
+      // ];
+      // // Add some test data
+
+      worksheet.columns = [
+        { key: "index", width: 5 },
+        { key: "name", width: 30 },
+        { key: "student_code", width: 20 },
+        { key: "attendance", width: 15 },
+        { key: "lesson_attendance", width: 110 },
+      ];
+      if (statistics_data) {
+        statistics_data.map((item, index) => {
+          worksheet.addRow({
+            index: index + 1,
+            name: item.name,
+            student_code: item.student_code,
+            attendance: item.attendance,
+            lesson_attendance: item.lesson_attendance,
+          });
+        });
+      }
+      // Test styling
+
+      // Style first row
+      worksheet.getRow(1).font = {
+        // name: "Arial Black",
+        family: 4,
+        size: 20,
+        underline: "double",
+        bold: true,
+        textAlign: "center",
+        horizontalCentered: true,
+      };
+      // Style second column
+      worksheet.eachRow((row, rowNumber) => {
+        row.font = {
+          name: "Times New Roman",
+          family: 4,
+          size: 14,
+          bold: true,
+          fitToWidth: 1,
+          horizontal: "center",
+        };
+      });
+
+      // Write to file
+      workbook.xlsx.writeBuffer().then((buffer: ExcelJS.Buffer) => {
+        // Do this to use base64 encoding
+        const nodeBuffer = NodeBuffer.from(buffer);
+        const bufferStr = nodeBuffer.toString("base64");
+        FileSystem.writeAsStringAsync(fileUri, bufferStr, {
+          encoding: FileSystem.EncodingType.Base64,
+        }).then(() => {
+          resolve(fileUri);
+        });
+      });
+    });
+  };
+
+  const shareExcel = async () => {
+    const shareableExcelUri: string = await generateShareableExcel();
+    Sharing.shareAsync(shareableExcelUri, {
+      mimeType:
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", // Android
+      dialogTitle: "Your dialog title here", // Android and Web
+      UTI: "com.microsoft.excel.xlsx", // iOS
+    })
+      .catch((error) => {
+        console.error("Error", error);
+      })
+      .then(() => {
+        console.log("Return from sharing dialog");
+      });
   };
 
   return (
@@ -93,10 +198,28 @@ function Statistics(props) {
           </View>
         </View>
       ) : (
-        <View style={{ paddingBottom: 20 }}>
-          <Text style={{ fontSize: 20, textAlign: "center", marginBottom: 20 }}>
-            {TEXT.CLASS_DETAIL.STATISTIC_LABEL}
-          </Text>
+        <View style={{ marginBottom: 20 }}>
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "center",
+              marginBottom: 20,
+            }}
+          >
+            <Text style={{ fontSize: 20, textAlign: "center" }}>
+              {TEXT.CLASS_DETAIL.STATISTIC_LABEL}
+            </Text>
+            <TouchableOpacity
+              style={{ position: "absolute", right: 15 }}
+              onPress={() => shareExcel()}
+            >
+              <Image
+                source={require("../images/ic_export.png")}
+                style={styles.img_header_icon}
+              />
+            </TouchableOpacity>
+          </View>
           {statistics_data
             ? statistics_data.map((item, index) => (
                 <TouchableOpacity
@@ -142,6 +265,21 @@ function Statistics(props) {
 function Lesson(props) {
   const { data, course_name } = props;
   const { navigate } = useNavigation();
+  const [toggleModal, setToggleModal] = useState(false);
+  const [id, setId] = useState();
+  const { token } = useSelector((state: any) => state.tokenState);
+
+  const onDeleteLesson = async (item_id) => {
+    try {
+      const res = await deleteLesson(token, item_id);
+      if (res) {
+        Alert.alert("Successfully");
+        setToggleModal(!toggleModal);
+      }
+    } catch (error) {
+      Alert.alert("Failed");
+    }
+  };
 
   const renderItem = ({ item, index }) => {
     return (
@@ -154,6 +292,7 @@ function Lesson(props) {
             course_name: course_name,
           })
         }
+        onLongPress={() => (setToggleModal(!toggleModal), setId(item._id))}
       >
         <View style={styles.v_lesson_item}>
           <Image
@@ -169,14 +308,60 @@ function Lesson(props) {
   return (
     <>
       {data ? (
-        <FlatList
-          data={data}
-          renderItem={renderItem}
-          keyExtractor={(item) => item._id}
-          numColumns={3}
-          contentContainerStyle={styles.v_flatList}
-          horizontal={false}
-        />
+        <>
+          <FlatList
+            data={data}
+            renderItem={renderItem}
+            keyExtractor={(item) => item._id}
+            numColumns={3}
+            contentContainerStyle={styles.v_flatList}
+            horizontal={false}
+          />
+          <Modal
+            animationType="slide"
+            transparent={true}
+            visible={toggleModal}
+            onRequestClose={() => {
+              setToggleModal(!toggleModal);
+            }}
+          >
+            <View
+              style={{
+                // backgroundColor: "rgba(0, 0, 0, 0.3)",
+                flex: 1,
+                justifyContent: "flex-end",
+              }}
+            >
+              <View
+                style={{
+                  paddingBottom: 20,
+                  backgroundColor: "#fff",
+                }}
+              >
+                {/* <TouchableOpacity style={styles.modalButton}>
+                  <Text>Change</Text>
+                </TouchableOpacity> */}
+                <TouchableOpacity
+                  style={styles.modalButton}
+                  onPress={() => {
+                    onDeleteLesson(id);
+                  }}
+                >
+                  <Text>Delete</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[
+                    styles.modalButton,
+                    { backgroundColor: icon_color, borderWidth: 0 },
+                  ]}
+                  onPress={() => setToggleModal(!toggleModal)}
+                >
+                  <Text style={{ color: "#fff" }}>Close</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </Modal>
+        </>
       ) : null}
     </>
   );
@@ -189,23 +374,29 @@ const Class_detail = memo((props: any) => {
   const [focus, setFocus] = useState<any>(true);
   const [lessonData, setLessonData] = useState<any>();
   const [modalVisible, setModalVisible] = useState(false);
-  const [statistic_data, setStatisticData] = useState<any>();
+  const [statistic_data, setStatisticData] = useState<any>([]);
+  const [student_list, set_student_list] = useState<any>([]);
   const { user } = useSelector((state: any) => state.userState);
+  const { token } = useSelector((state: any) => state.tokenState);
+  const [turnOnLoading, setTurnOnLoading] = useState(true);
+  const [toggleModal, setToggleModal] = useState(false);
 
   const getLessonDetail = async () => {
-    const lesson_Data = await getLessonByCourse(null, _id);
+    const lesson_Data = await getLessonByCourse(token, _id);
     setLessonData(lesson_Data);
-    // console.log(lesson_Data);
   };
 
   const getStatistic = async () => {
-    const statistics = await getCourseStatistic(null, _id);
+    const statistics = await getCourseStatistic(token, _id);
     // console.log(statistics);
 
     if (statistics !== {} && statistics !== undefined) {
+      const statisticAlphabet = sort_alphabet(statistics?.statistic);
+      // console.log(statisticAlphabet);
+      set_student_list(statisticAlphabet);
       if (user.role === "Student") {
         var temp = { statistic: "" };
-        const find_user = statistics?.statistic.filter(
+        const find_user = statisticAlphabet.filter(
           (item) => item.student_id == user._id
         );
         temp.statistic = find_user;
@@ -214,13 +405,35 @@ const Class_detail = memo((props: any) => {
     }
   };
 
+  const sort_alphabet = (statistic: any) => {
+    function SortArray(x, y) {
+      if (x.last_name < y.last_name) {
+        return -1;
+      }
+      if (x.last_name > y.last_name) {
+        return 1;
+      }
+      return 0;
+    }
+    var s = statistic.sort(SortArray);
+    return s;
+  };
+
   useEffect(() => {
     getLessonDetail();
     getStatistic();
   }, []);
 
+  useEffect(() => {
+    if (lessonData) {
+      setTurnOnLoading(false);
+    }
+  }, [lessonData]);
+
   return (
     <SafeAreaView style={styles.container}>
+      {turnOnLoading ? <Loading></Loading> : null}
+
       <View>
         <View style={styles.header}>
           <TouchableOpacity
@@ -233,6 +446,7 @@ const Class_detail = memo((props: any) => {
             />
             <Text style={styles.txt_header}>{TEXT.CLASS_DETAIL.CLASS}</Text>
           </TouchableOpacity>
+
           <TouchableOpacity
             style={{ position: "absolute", right: 15 }}
             onPress={() => setModalVisible(true)}
@@ -242,7 +456,33 @@ const Class_detail = memo((props: any) => {
               source={require("../images/ic_information.png")}
             />
           </TouchableOpacity>
+
+          {user?.role === "Student" ? null : (
+            <TouchableOpacity
+              style={{ position: "absolute", right: 50 }}
+              onPress={() => navigate(Routes.ADD_LESON, { courseId: _id })}
+            >
+              <Image
+                style={{ height: 18, width: 18, tintColor: icon_color }}
+                source={require("../images/ic_add.png")}
+              />
+            </TouchableOpacity>
+          )}
+
+          <TouchableOpacity
+            style={[
+              { position: "absolute", right: 85 },
+              user?.role === "Student" && { right: 50 },
+            ]}
+            onPress={() => (getStatistic(), getLessonDetail())}
+          >
+            <Image
+              style={{ height: 20, width: 20, tintColor: icon_color }}
+              source={require("../images/ic_refresh.png")}
+            />
+          </TouchableOpacity>
         </View>
+
         <View style={[styles.v_class_infor]}>
           <Class_information
             imageStyle={{ tintColor: "#d84a4a" }}
@@ -302,6 +542,7 @@ const Class_detail = memo((props: any) => {
           <Statistics
             statistics_data={statistic_data?.statistic}
             numberOfLesson={lessonData.lesson.length}
+            course_name={lessonData?.course.classroom_name}
           />
         </>
       )}
@@ -332,25 +573,29 @@ const Class_detail = memo((props: any) => {
               {TEXT.CLASS_DETAIL.STUDENT_LIST}
             </Text>
             <View>
-              {lessonData?.course?.students.map((item, index) => (
-                <View
-                  style={[
-                    styles.v_student_item,
-                    index % 2 == 0 && { backgroundColor: "#FFEEEC" },
-                  ]}
-                  key={index}
-                >
-                  <Text
-                    style={{ flex: 0.1, fontSize: 18, textAlign: "center" }}
-                  >
-                    {index + 1}
-                  </Text>
-                  <Text style={{ flex: 0.7, fontSize: 18 }}>{item.name}</Text>
-                  <Text style={{ flex: 0.3, fontSize: 18 }}>
-                    {item.student_code}
-                  </Text>
-                </View>
-              ))}
+              {student_list
+                ? student_list.map((item, index) => (
+                    <View
+                      style={[
+                        styles.v_student_item,
+                        index % 2 == 0 && { backgroundColor: "#FFEEEC" },
+                      ]}
+                      key={index}
+                    >
+                      <Text
+                        style={{ flex: 0.1, fontSize: 18, textAlign: "center" }}
+                      >
+                        {index + 1}
+                      </Text>
+                      <Text style={{ flex: 0.7, fontSize: 18 }}>
+                        {item.name}
+                      </Text>
+                      <Text style={{ flex: 0.3, fontSize: 18 }}>
+                        {item.student_code}
+                      </Text>
+                    </View>
+                  ))
+                : null}
             </View>
           </ScrollView>
         </View>
@@ -558,5 +803,17 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingVertical: 10,
     borderBottomWidth: 0.2,
+  },
+
+  modalButton: {
+    height: 40,
+    borderRadius: 20,
+    width: "80%",
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: regular,
+    alignSelf: "center",
+    marginTop: 20,
   },
 });

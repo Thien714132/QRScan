@@ -1,32 +1,21 @@
 import { useNavigation } from "@react-navigation/native";
-import React, { memo, useState, useCallback, useEffect } from "react";
-import {
-  View,
-  StyleSheet,
-  TouchableOpacity,
-  Image,
-  TextInput,
-  Text,
-  ImageBackground,
-  KeyboardAvoidingView,
-  Platform,
-  TouchableWithoutFeedback,
-  Keyboard,
-  Button,
-  Dimensions,
-  Alert,
-} from "react-native";
-import { BarCodeScanner } from "expo-barcode-scanner";
-import scale from "../configs/scale";
-import Scanner from "../components/Sacnner";
-import { icon_color, main_color1, regular } from "../configs/Colors";
-import { TEXT } from "../configs/TEXT";
-import { useSelector } from "react-redux";
 import moment from "moment";
-import { changeInfor } from "../services/class_services";
-import { getUser } from "../services/auth";
-import token from "../redux/token";
+import React, { useState } from "react";
+import {
+  Alert,
+  Image,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { useSelector } from "react-redux";
+import { icon_color, main_color1, regular } from "../configs/Colors";
+import scale from "../configs/scale";
 import { setUser } from "../redux/actions/userAction";
+import { getUser } from "../services/auth";
+import { changeInfor } from "../services/class_services";
 
 const User_detail = () => {
   const { goBack, navigate } = useNavigation();
@@ -49,7 +38,7 @@ const User_detail = () => {
         date_of_birth: DOB,
         phone: phone,
       };
-      const temp = await changeInfor(null, user._id, postData);
+      const temp = await changeInfor(token, user._id, postData);
       if (temp.message === "Sucessfully") {
         const userData: any = await getUser(token, user._id);
         if (userData) {
@@ -61,7 +50,7 @@ const User_detail = () => {
       postData = {
         date_of_birth: DOB,
       };
-      const temp = await changeInfor(null, user._id, postData);
+      const temp = await changeInfor(token, user._id, postData);
       if (temp.message === "Sucessfully") {
         const userData: any = await getUser(token, user._id);
         if (userData) {
@@ -77,7 +66,7 @@ const User_detail = () => {
       postData = {
         phone: phone,
       };
-      const temp = await changeInfor(null, user._id, postData);
+      const temp = await changeInfor(token, user._id, postData);
       if (temp.message === "Sucessfully") {
         const userData: any = await getUser(token, user._id);
         if (userData) {

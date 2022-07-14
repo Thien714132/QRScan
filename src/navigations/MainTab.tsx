@@ -1,15 +1,13 @@
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
-import { TabActions } from "@react-navigation/native";
+import { LinearGradient } from "expo-linear-gradient";
+import React from "react";
+import { Image, StyleSheet, TouchableOpacity, View } from "react-native";
+import { icon_color, icon_color_2 } from "../configs/Colors";
 import Routes from "../configs/Routes";
 import scale from "../configs/scale";
 import accountStack from "./accountStack";
 import dashBoardStack from "./dashBoardStack";
-import { View, StyleSheet, Image, TouchableOpacity } from "react-native";
-import Scan from "../container/Scan";
 import ScanStack from "./ScanStack";
-import { LinearGradient } from "expo-linear-gradient";
-import React from "react";
-import { icon_color, icon_color_2 } from "../configs/Colors";
 
 const Tab = createBottomTabNavigator();
 

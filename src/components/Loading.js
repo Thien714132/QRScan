@@ -13,7 +13,7 @@ export default function Loading() {
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: '#70707077',
+    backgroundColor: '#fff',
     position: 'absolute',
     top: 0,
     left: 0,

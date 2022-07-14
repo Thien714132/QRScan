@@ -1,20 +1,15 @@
 import { useNavigation } from "@react-navigation/native";
-import React, { memo, useState, useCallback, useEffect } from "react";
+import moment from "moment";
+import React, { useState } from "react";
 import {
-  View,
-  StyleSheet,
-  TouchableOpacity,
-  Image,
-  TextInput,
-  Text,
-  ImageBackground,
-  KeyboardAvoidingView,
-  Platform,
-  TouchableWithoutFeedback,
-  Keyboard,
   SafeAreaView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { ScrollView } from "react-native-gesture-handler";
+import { useSelector } from "react-redux";
 import Account_button from "../components/Account_button";
 import {
   capital,
@@ -25,10 +20,6 @@ import {
 } from "../configs/Colors";
 import Routes from "../configs/Routes";
 import { deleteToken } from "../redux/actions/tokenAction";
-import { useSelector } from "react-redux";
-import { deleteUser } from "../redux/actions/userAction";
-import { deleteCourse } from "../redux/actions/coursesAction";
-import moment from "moment";
 
 const Account = () => {
   const { navigate } = useNavigation();
@@ -43,9 +34,6 @@ const Account = () => {
       return letter;
     }
   };
-
-  // let userName: String;
-  // let userRole: String
 
   const onSignOut = () => {
     deleteToken();

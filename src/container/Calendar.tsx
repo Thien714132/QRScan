@@ -1,84 +1,73 @@
 import { useNavigation } from "@react-navigation/native";
-import { ModalTransition } from "@react-navigation/stack/lib/typescript/src/TransitionConfigs/TransitionPresets";
 import moment from "moment";
-import React, { memo, useState, useCallback, useEffect } from "react";
-import Moment from "react-moment";
+import React, { useEffect, useState } from "react";
 import {
-  View,
-  StyleSheet,
-  TouchableOpacity,
-  Image,
-  TextInput,
-  Text,
-  ImageBackground,
-  KeyboardAvoidingView,
-  Platform,
-  TouchableWithoutFeedback,
-  Keyboard,
   SafeAreaView,
-  Button,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
-import {
-  Calendar,
-  CalendarList,
-  Agenda,
-  CalendarProvider,
-} from "react-native-calendars";
+import { Agenda } from "react-native-calendars";
 import { useSelector } from "react-redux";
+import { main_color1, regular } from "../configs/Colors";
 import Routes from "../configs/Routes";
 import scale from "../configs/scale";
-
-// const scheduleData = [
-//   {
-//     id: 1,
-//     Class: {
-//       Subject_Name: "Lập trình Mobile",
-//       Class_name: "103-TA1",
-//       Teacher_name: "Le Ba Cuong",
-//       Student_id_list: [1, 2, 3, 4, 5, 6, 7, 8, 9, 0],
-//       learning_day: [
-//         { date: "2022-04-03", session: 1 },
-//         { date: "2022-04-12", session: 1 },
-//         { date: "2022-04-18", session: 1 },
-//         { date: "2022-04-25", session: 2 },
-//         { date: "2022-05-03", session: 2 },
-//         { date: "2022-05-10", session: 2 },
-//         { date: "2022-05-17", session: 2 },
-//       ],
-//     },
-//   },
-//   {
-//     id: 2,
-//     Class: {
-//       Subject_Name: "Lập trình nhúng",
-//       Class_name: "102-TA1",
-//       Teacher_name: "Pham Van Huong",
-//       Student_id_list: [1, 2, 3, 4, 5, 6, 7, 8, 9, 0],
-//       learning_day: [
-//         { date: "2022-04-03", session: 5 },
-//         { date: "2022-04-12", session: 5 },
-//         { date: "2022-04-19", session: 5 },
-//         { date: "2022-04-26", session: 4 },
-//         { date: "2022-05-04", session: 4 },
-//         { date: "2022-05-11", session: 4 },
-//         { date: "2022-05-18", session: 4 },
-//       ],
-//     },
-//   },
-// ];
+import { getStudentClass, getTeacherClass } from "../services/class_services";
 
 const Calendar_Screen = () => {
   const { navigate, goBack } = useNavigation();
   const [schedule, setSchedule] = useState<any>();
+  const [courses, setCourses] = useState<any>();
   const { course } = useSelector((state: any) => state.courseState);
+  const { user } = useSelector((state: any) => state.userState);
+  const { token } = useSelector((state: any) => state.tokenState);
 
-  const getCalendarData = () => {
-    var courseData = course?.courses;
-    var lessonData = course?.lesson;
+  const onGetCourse = async () => {};
+
+  const getCalendarData = async (): Promise<any> => {
+    let temp: any;
+    if (user?.role === "Student") {
+      const coursesData = await getStudentClass(token, user?._id);
+      if (coursesData) {
+        temp = coursesData;
+      }
+    } else if (user?.role === "Teacher") {
+      const coursesData = await getTeacherClass(token, user._id);
+      if (coursesData) {
+        temp = coursesData;
+      }
+    }
+    var courseData = temp?.courses;
+    var lessonData = temp?.lesson;
     for (var i = 0; i < courseData.length; i++) {
       courseData[i].lessons = lessonData[i];
     }
-    return courseData;
+    var scheduleTemp = {};
+    courseData.map((item) => {
+      item.lessons.map((item2) => {
+        const a = Object.keys(scheduleTemp);
+        if (a.includes(convertDate(item2.lesson_date))) {
+          scheduleTemp[convertDate(item2.lesson_date)].push({
+            Teacher_name: item.teacher_id.name,
+            Class_name: "alo",
+            Subject_Name: item.classroom_name,
+            Session: item2.shift,
+          });
+        } else {
+          scheduleTemp[convertDate(item2.lesson_date)] = [
+            {
+              lesson_id: item2._id,
+              Teacher_name: item.teacher_id.name,
+              Class_name: item.location,
+              Subject_Name: item.classroom_name,
+              Session: item2.shift,
+            },
+          ];
+        }
+      });
+    });
+    setSchedule(scheduleTemp);
   };
 
   const convertDate = (date) => {
@@ -102,40 +91,45 @@ const Calendar_Screen = () => {
     return a;
   };
 
-  const convertSchedule = () => {
-    const data = getCalendarData();
-    // console.log(data);
-    var scheduleTemp = {};
-    data.map((item) => {
-      item.lessons.map((item2) => {
-        const a = Object.keys(scheduleTemp);
-        if (a.includes(convertDate(item2.lesson_date))) {
-          scheduleTemp[convertDate(item2.lesson_date)].push({
-            Teacher_name: item.teacher_id.name,
-            Class_name: "alo",
-            Subject_Name: item.classroom_name,
-            Session: item2.shift,
-          });
-        } else {
-          scheduleTemp[convertDate(item2.lesson_date)] = [
-            {
-              lesson_id: item2._id,
-              Teacher_name: item.teacher_id.name,
-              Class_name: item.location,
-              Subject_Name: item.classroom_name,
-              Session: item2.shift,
-            },
-          ];
-        }
-      });
-    });
-    // console.log(scheduleTemp);
-    return scheduleTemp;
-  };
+  // const convertSchedule = () => {
+  //   const data = getCalendarData();
+  //   // console.log(data);
+  //   var scheduleTemp = {};
+  //   if (courses) {
+  //     courses.map((item) => {
+  //       item.lessons.map((item2) => {
+  //         const a = Object.keys(scheduleTemp);
+  //         if (a.includes(convertDate(item2.lesson_date))) {
+  //           scheduleTemp[convertDate(item2.lesson_date)].push({
+  //             Teacher_name: item.teacher_id.name,
+  //             Class_name: "alo",
+  //             Subject_Name: item.classroom_name,
+  //             Session: item2.shift,
+  //           });
+  //         } else {
+  //           scheduleTemp[convertDate(item2.lesson_date)] = [
+  //             {
+  //               lesson_id: item2._id,
+  //               Teacher_name: item.teacher_id.name,
+  //               Class_name: item.location,
+  //               Subject_Name: item.classroom_name,
+  //               Session: item2.shift,
+  //             },
+  //           ];
+  //         }
+  //       });
+  //     });
+  //   }
+
+  //   // console.log(scheduleTemp);
+  //   return scheduleTemp;
+  // };
 
   useEffect(() => {
-    const a = convertSchedule();
-    setSchedule(a);
+    getCalendarData();
+    // console.log(getCalendarData());
+    // const a = convertSchedule();
+    // setSchedule(a);
   }, []);
 
   // console.log(schedule);
@@ -149,7 +143,7 @@ const Calendar_Screen = () => {
           Back
         </Text>
         <Text style={{ fontSize: 20, fontWeight: "bold" }}>
-          {moment(moment()).format("DD-MMM-YYYY")}
+          {moment(moment()).format("DD-MM-YYYY")}
         </Text>
       </View>
       <Agenda
@@ -187,7 +181,25 @@ const Calendar_Screen = () => {
           );
         }}
         renderEmptyData={() => {
-          return <View />;
+          return (
+            <View
+              style={{
+                justifyContent: "center",
+                height: "100%",
+              }}
+            >
+              <Text
+                style={{
+                  fontSize: 30,
+                  fontWeight: "bold",
+                  color: regular,
+                  textAlign: "center",
+                }}
+              >
+                No class today
+              </Text>
+            </View>
+          );
         }}
         theme={{
           agendaDayTextColor: "#303137",
@@ -201,6 +213,8 @@ const Calendar_Screen = () => {
           textDayHeaderFontWeight: "bold",
           foregroundColor: "#FFF3C6",
           todayTextColor: "#EFC93B",
+          // calendarBackground: main_color1,
+          backgroundColor: main_color1,
         }}
       />
     </SafeAreaView>
@@ -212,7 +226,7 @@ export default Calendar_Screen;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F8FAFE",
+    backgroundColor: "#fff",
   },
 
   v_header: {

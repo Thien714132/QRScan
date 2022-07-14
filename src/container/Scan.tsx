@@ -1,22 +1,5 @@
-import { useNavigation } from "@react-navigation/native";
-import React, { memo, useState, useCallback, useEffect } from "react";
-import {
-  View,
-  StyleSheet,
-  TouchableOpacity,
-  Image,
-  TextInput,
-  Text,
-  ImageBackground,
-  KeyboardAvoidingView,
-  Platform,
-  TouchableWithoutFeedback,
-  Keyboard,
-  Button,
-  Dimensions,
-} from "react-native";
-import { BarCodeScanner } from "expo-barcode-scanner";
-import scale from "../configs/scale";
+import React from "react";
+import { StyleSheet, View } from "react-native";
 import Scanner from "../components/Sacnner";
 
 const Scan = () => {
@@ -47,7 +30,6 @@ const Scan = () => {
 
   return (
     <View style={styles.container}>
-      
       {/* <BarCodeScanner
         onBarCodeScanned={scanned ? undefined : handleBarCodeScanned}
         style={StyleSheet.absoluteFillObject}

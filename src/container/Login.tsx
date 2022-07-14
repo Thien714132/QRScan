@@ -1,42 +1,35 @@
 import { useNavigation } from "@react-navigation/native";
-import React, { memo, useState, useCallback, useEffect } from "react";
+import jwt_decode from "jwt-decode";
+import React, { memo, useState } from "react";
 import {
-  View,
-  StyleSheet,
-  TouchableOpacity,
   Image,
-  TextInput,
-  Text,
-  ImageBackground,
-  KeyboardAvoidingView,
-  Platform,
-  TouchableWithoutFeedback,
   Keyboard,
-  Button,
+  KeyboardAvoidingView,
   Modal,
-  Dimensions,
+  Platform,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  TouchableWithoutFeedback,
+  View,
 } from "react-native";
 import Loading from "../components/Loading";
-import { API } from "../configs/Constants";
 import validationEmail from "../configs/emailValidate";
-import Routes from "../configs/Routes";
 import scale from "../configs/scale";
 import { TEXT } from "../configs/TEXT";
+import { setCourse } from "../redux/actions/coursesAction";
+import { setHistory } from "../redux/actions/historyAction";
 import { setToken } from "../redux/actions/tokenAction";
-import { getUser, login } from "../services/auth";
-import jwt_decode from "jwt-decode";
 import { setUser } from "../redux/actions/userAction";
+import { getUser, login } from "../services/auth";
 import {
-  getAllClasses,
   getHistoryByStudent,
   getHistoryByTeacher,
   getStudentClass,
   getTeacherClass,
 } from "../services/class_services";
-import { setCourse } from "../redux/actions/coursesAction";
-import { useSelector } from "react-redux";
-import { BarCodeScanner } from "expo-barcode-scanner";
-import { setHistory } from "../redux/actions/historyAction";
 
 interface LoginProps {}
 
@@ -56,19 +49,7 @@ const Login = memo((props: LoginProps) => {
   //   console.log(b);
   // };
 
-  // console.log(validationEmail("asdasd@asdasd.comn"));
-
   const onLogin = async () => {
-    // const validateEmail = validationEmail(email);
-    // if (!validateEmail) {
-    //   setValidateLogin({
-    //     ...validateLogin,
-    //     status: true,
-    //     mes: "Email invalid",
-    //   });
-    //   return;
-    // }
-
     setValidateLogin({ status: false, mes: "" });
 
     if (
@@ -102,41 +83,62 @@ const Login = memo((props: LoginProps) => {
         password,
         email,
       });
-      console.log(data);
-      if (data?.access_token) {
-        if (data.access_token !== "ERROR") {
-          var decoded = jwt_decode(data.access_token);
-          setToken(data.access_token);
-          const userData: any = await getUser(data.access_token, decoded._id);
-          var coursesData = {};
-          var historyData = {};
-          if (userData?.role === "Student") {
-            coursesData = await getStudentClass(userData._id);
-            historyData = await getHistoryByStudent(null, userData._id);
-          } else if (userData?.role === "Teacher") {
-            coursesData = await getTeacherClass(userData._id);
-            historyData = await getHistoryByTeacher(null, userData._id);
+      // console.log(data);
+      try {
+        if (data?.access_token) {
+          if (data.access_token !== "ERROR") {
+            var decoded = jwt_decode(data.access_token);
+            setToken(data.access_token);
+            const userData: any = await getUser(data.access_token, decoded._id);
+            var coursesData = {};
+            var historyData = {};
+            if (userData?.role === "Student") {
+              coursesData = await getStudentClass(
+                data.access_token,
+                userData._id
+              );
+              historyData = await getHistoryByStudent(
+                data.access_token,
+                userData._id
+              );
+            } else if (userData?.role === "Teacher") {
+              coursesData = await getTeacherClass(
+                data.access_token,
+                userData._id
+              );
+              historyData = await getHistoryByTeacher(
+                data.access_token,
+                userData._id
+              );
+            }
+            // console.log(coursesData);
+            if (!userData.message && !coursesData.message) {
+              setUser(userData);
+              setCourse(coursesData);
+              setHistory(historyData);
+            }
+            setTurnOnLoading(false);
+            setValidateLogin({
+              ...validateLogin,
+              status: true,
+              mes: "Login failed. Try again",
+            });
+          } else {
+            setTurnOnLoading(false);
           }
-          // console.log(coursesData);
-          if (!userData.message && !coursesData.message) {
-            setUser(userData);
-            setCourse(coursesData);
-            setHistory(historyData);
-          }
+        } else if (data?.message) {
           setTurnOnLoading(false);
           setValidateLogin({
             ...validateLogin,
             status: true,
-            mes: "Login failed. Try again",
+            mes: data.message,
           });
-        } else {
-          setTurnOnLoading(false);
         }
-      } else if (data?.message) {
+      } catch (error) {
         setTurnOnLoading(false);
         setValidateLogin({
           ...validateLogin,
-          status: true,
+          status: error,
           mes: data.message,
         });
       }
@@ -205,7 +207,7 @@ const Login = memo((props: LoginProps) => {
               style={[
                 styles.v_inputContainer,
                 {
-                  backgroundColor: "#333542",
+                  backgroundColor: "#EFC93B",
                   alignItems: "center",
                   justifyContent: "center",
                 },
@@ -218,7 +220,7 @@ const Login = memo((props: LoginProps) => {
               {TEXT.LOGIN.FORGET_PASS}
             </Text>
 
-            <TouchableOpacity
+            {/* <TouchableOpacity
               style={[
                 styles.v_registerButton,
                 {
@@ -231,7 +233,7 @@ const Login = memo((props: LoginProps) => {
               <Text style={styles.txt_buttonText}>
                 {TEXT.LOGIN.BT_REGISTER}
               </Text>
-            </TouchableOpacity>
+            </TouchableOpacity> */}
           </View>
           <Modal
             animationType="slide"
@@ -263,6 +265,9 @@ const Login = memo((props: LoginProps) => {
 });
 
 export default Login;
+
+const STATUSBAR_HEIGHT = StatusBar.currentHeight;
+const APPBAR_HEIGHT = Platform.OS === "ios" ? 44 : 56;
 
 const styles = StyleSheet.create({
   container: {
@@ -410,5 +415,13 @@ const styles = StyleSheet.create({
     marginVertical: scale(20),
     marginRight: scale(30),
     alignSelf: "flex-end",
+  },
+
+  statusBar: {
+    height: STATUSBAR_HEIGHT,
+  },
+  appBar: {
+    backgroundColor: "#79B45D",
+    height: APPBAR_HEIGHT,
   },
 });

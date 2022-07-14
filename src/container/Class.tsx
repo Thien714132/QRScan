@@ -1,22 +1,18 @@
 import { useNavigation } from "@react-navigation/native";
-import React, { memo, useState, useCallback, useEffect } from "react";
+import { LinearGradient } from "expo-linear-gradient";
+import React, { useState } from "react";
 import {
-  View,
-  StyleSheet,
-  TouchableOpacity,
   Image,
-  TextInput,
-  Text,
-  ImageBackground,
-  KeyboardAvoidingView,
-  Platform,
-  TouchableWithoutFeedback,
   SafeAreaView,
   ScrollView,
-  TextInputComponent,
-  Button,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
-import SvgQRCode from "react-native-qrcode-svg";
+import { useSelector } from "react-redux";
+import getName from "../components/Get_first_letter";
 import {
   capital,
   icon_color,
@@ -26,10 +22,6 @@ import {
   regular,
 } from "../configs/Colors";
 import Routes from "../configs/Routes";
-import { LinearGradient } from "expo-linear-gradient";
-import getName from "../components/Get_first_letter";
-import { getAllClasses } from "../services/class_services";
-import { useSelector } from "react-redux";
 import { TEXT } from "../configs/TEXT";
 
 const Class = () => {
